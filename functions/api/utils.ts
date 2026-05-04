@@ -1,6 +1,4 @@
-// @ts-ignore
-// @ts-ignore
-import jwt from 'jsonwebtoken';
+import jwt from '@tsndr/cloudflare-worker-jwt';
 
 export interface Env {
   DB: D1Database;
@@ -69,8 +67,8 @@ export async function authenticateAdmin(request: Request, env: Env): Promise<boo
   
   const token = authHeader.split(' ')[1];
   try {
-    jwt.verify(token, env.JWT_SECRET);
-    return true;
+    const isValid = await jwt.verify(token, env.JWT_SECRET);
+    return !!isValid;
   } catch (err) {
     return false;
   }

@@ -1,6 +1,4 @@
-// @ts-ignore
-// @ts-ignore
-import jwt from 'jsonwebtoken';
+import jwt from '@tsndr/cloudflare-worker-jwt';
 import { Env, initDatabase } from '../utils';
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -9,7 +7,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { password } = await request.json() as { password?: string };
 
   if (password === env.ADMIN_PASSWORD) {
-    const token = jwt.sign({ admin: true }, env.JWT_SECRET, { expiresIn: '1d' });
+    const exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 1 day expiration
+    const token = await jwt.sign({ admin: true, exp }, env.JWT_SECRET);
     return new Response(JSON.stringify({ token }), {
       headers: { 'Content-Type': 'application/json' }
     });
