@@ -1,7 +1,7 @@
 # Cloudflare Pages Configuration
 name = "lifeteller"
 pages_build_output_dir = "dist"
-compatibility_date = "2024-04-03"
+compatibility_date = "2025-01-01"
 compatibility_flags = [ "nodejs_compat" ]
 
 [[d1_databases]]
