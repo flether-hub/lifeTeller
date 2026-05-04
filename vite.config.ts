@@ -12,8 +12,7 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
-    // We proxy API requests in development to our Express server process
-    // Wait, since we are using Vite middleware in Express, we don't need proxying
+    // Wrangler handles functions in /functions automatically
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
