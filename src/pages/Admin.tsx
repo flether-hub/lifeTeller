@@ -191,6 +191,8 @@ export default function Admin() {
             <div className="mb-4">
               <input
                 type="password"
+                name="password"
+                autoComplete="current-password"
                 placeholder="输入管理密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

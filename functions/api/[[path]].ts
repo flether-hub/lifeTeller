@@ -240,7 +240,7 @@ export const onRequest = async (context: any) => {
         let stream;
         try {
           stream = await ai.models.generateContentStream({
-            model: "gemini-1.5-flash",
+            model: "gemini-2.0-flash",
             contents: body.prompt,
           });
         } catch (err: any) {

@@ -201,7 +201,7 @@ async function startServer() {
 
         const ai = new GoogleGenAI({ apiKey });
         const stream = await ai.models.generateContentStream({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.0-flash',
           contents: prompt
         });
 
