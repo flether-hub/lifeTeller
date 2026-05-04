@@ -1,0 +1,83 @@
+import { GoogleGenAI } from '@google/genai';
+import { Env, getSetting } from '../utils';
+
+export const onRequestPost: PagesFunction<Env> = async (context) => {
+  const { env, request } = context;
+  
+  try {
+    const { prompt } = await request.json() as { prompt: string };
+    const customKey = await getSetting(env.DB, 'custom_api_key', '');
+    let apiKey = customKey || env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "服务器未配置 API Key" }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const modelsToTry = ["gemini-3-flash-preview", "gemini-3.1-pro-preview", "gemini-2.0-flash"];
+    
+    let lastError: any = null;
+    let responseText = "";
+
+    async function tryGenerate(targetKey: string) {
+      const ai = new GoogleGenAI(targetKey);
+      for (const modelId of modelsToTry) {
+        try {
+          const model = ai.getGenerativeModel({ model: modelId });
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          const text = response.text();
+          
+          if (text) {
+            let processedText = text.trim();
+            // Clean markdown and non-json wrappers
+            processedText = processedText
+              .replace(/^[^{]*(\{[\s\S]*\})[^}]*$/, '$1')
+              .replace(/^```json\s*/i, '')
+              .replace(/\s*```$/i, '')
+              .trim();
+            return processedText;
+          }
+        } catch (err: any) {
+          lastError = err;
+          // If it's a model-not-found error or other retryable errors, continue to next model
+          if (err.message && (err.message.includes('API key not valid') || err.message.includes('API_KEY_INVALID'))) {
+            throw err;
+          }
+        }
+      }
+      return null;
+    }
+
+    try {
+      responseText = await tryGenerate(apiKey) || "";
+    } catch (err: any) {
+      // If custom key failed AND we have a fallback key, try the fallback
+      const isAuthError = err.message?.includes('API key not valid') || err.message?.includes('API_KEY_INVALID');
+      const isQuotaError = err.message?.includes('quota') || err.status === 429;
+      
+      if (customKey && env.GEMINI_API_KEY && (isAuthError || isQuotaError)) {
+        console.warn(`Gemini API Error with custom key (${isAuthError ? 'Auth' : 'Quota'}), falling back to system key`);
+        responseText = await tryGenerate(env.GEMINI_API_KEY) || "";
+      } else {
+        throw err;
+      }
+    }
+
+    if (lastError && !responseText) {
+      throw lastError;
+    }
+
+    return new Response(JSON.stringify({ result: responseText }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (err: any) {
+    let errorMessage = err.message || 'AI 生成失败';
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+};

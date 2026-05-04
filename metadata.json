@@ -1,0 +1,6 @@
+{
+  "name": "lifeTeller",
+  "description": "基于八字的算命程序",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

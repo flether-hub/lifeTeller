@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: system-ui, sans-serif;
+  --font-serif: "Noto Serif SC", serif;
+}
+
+body {
+  background-color: #080f25; /* deep twilight blue instead of black */
+  color: #f8fafc;
+  overflow-x: hidden;
+}
+
+.crystal-ball-glow {
+  animation: pulse-glow 3s infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% { filter: drop-shadow(0 0 10px rgba(234, 179, 8, 0.3)); }
+  100% { filter: drop-shadow(0 0 30px rgba(234, 179, 8, 0.6)); }
+}
+
+.float {
+  animation: floating 4s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0px); }
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  font-family: var(--font-serif);
+  color: #fde047;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-body p {
+  margin-bottom: 1em;
+  line-height: 1.6;
+}
+
+.markdown-body strong {
+  color: #fef08a;
+}
+
+.markdown-body ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+@media print {
+  @page {
+    margin: 15mm 10mm;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: white !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #fortune-result-content, #fortune-result-content * {
+    visibility: visible;
+  }
+  #fortune-result-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white !important;
+  }
+  
+  /* Reset container fixed / overflows for multi-page printing */
+  .fixed, .overflow-y-auto, .overflow-hidden, .max-h-\[90vh\], .h-screen {
+    position: static !important;
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    transform: none !important;
+  }
+
+  .print-hide {
+    display: none !important;
+  }
+  .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
