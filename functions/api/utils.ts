@@ -1,3 +1,4 @@
+// @ts-ignore
 import jwt from 'jsonwebtoken';
 
 export interface Env {

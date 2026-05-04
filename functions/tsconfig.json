@@ -2,16 +2,20 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "lib": ["ESNext"],
-    "types": ["@cloudflare/workers-types"],
+    "types": ["@cloudflare/workers-types", "node"],
     "strict": true,
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
     "esModuleInterop": true,
     "isolatedModules": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "*": ["../node_modules/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.js"]
 }

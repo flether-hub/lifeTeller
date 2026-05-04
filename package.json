@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev --d1 DB=lifeteller_db --compatibility-flag=nodejs_compat --port 3000 --ip 0.0.0.0 --proxy 5173 -- vite --port 5173 --host 0.0.0.0",
+    "dev": "npx wrangler pages dev dist --d1 DB=lifeteller_db --compatibility-flag=nodejs_compat --port 3000 --ip 0.0.0.0 --proxy 5173 -- npx vite --port 5173 --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
+    "@google/generative-ai": "^0.24.1",
     "clsx": "^2.1.1",
     "d3-geo": "^3.1.1",
     "html-to-image": "^1.11.13",

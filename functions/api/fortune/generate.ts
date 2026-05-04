@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Env, getSetting, initDatabase } from '../utils';
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -17,16 +17,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
-    const modelsToTry = ["gemini-3-flash-preview", "gemini-3.1-pro-preview", "gemini-2.0-flash"];
+    const modelsToTry = ["gemini-3-flash-preview", "gemini-1.5-flash", "gemini-2.0-flash"];
     
     let lastError: any = null;
     let responseText = "";
 
     async function tryGenerate(targetKey: string) {
-      const ai = new GoogleGenAI(targetKey);
+      const genAI = new GoogleGenerativeAI(targetKey);
       for (const modelId of modelsToTry) {
         try {
-          const model = ai.getGenerativeModel({ model: modelId });
+          const model = genAI.getGenerativeModel({ model: modelId });
           const result = await model.generateContent(prompt);
           const response = await result.response;
           const text = response.text();

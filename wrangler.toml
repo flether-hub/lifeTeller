@@ -8,9 +8,3 @@ compatibility_flags = [ "nodejs_compat" ]
 binding = "DB" # This binding name is used in context.env.DB
 database_name = "lifeteller_db"
 database_id = "00b368a2-89f0-4ae7-8519-f3eabba03dd3" # Replace with your D1 database ID after running: npx wrangler d1 create lifeteller_db
-
-[vars]
-# Ensure these match your environment variables in Cloudflare Dashboard
-JWT_SECRET = "change-me-in-production"
-ADMIN_PASSWORD = "admin"
-# GEMINI_API_KEY should be set as a secret in the Cloudflare dashboard
