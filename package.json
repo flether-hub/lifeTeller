@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev dist --d1 DB=lifeteller_db --compatibility-flag=nodejs_compat",
+    "dev": "wrangler pages dev --d1 DB=lifeteller_db --compatibility-flag=nodejs_compat --port 3000 --ip 0.0.0.0 --proxy 5173 -- npx vite --port 5173 --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -22,6 +22,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "prop-types": "^15.8.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",

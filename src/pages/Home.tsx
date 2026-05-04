@@ -655,11 +655,11 @@ export default function Home() {
               <div className="flex flex-col gap-5 text-sm text-slate-600">
                 <div className="flex items-start gap-3">
                   <span className="text-amber-500 text-lg font-bold leading-tight mt-[-2px]">✧</span>
-                  <span className="leading-relaxed"><strong className="text-slate-800 font-bold mr-1">隐私承诺：</strong>建议输入真实信息。我们承诺不上传任何个人信息，报告仅暂存在您的浏览器中。</span>
+                  <span className="leading-relaxed"><strong className="text-slate-800 font-bold mr-1">隐私承诺：</strong>建议输入真实姓名和出生地。诚心敬意，方能窥见天机，报告仅暂存在您的浏览器中。</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="text-sky-500 text-lg font-bold leading-tight mt-[-2px]">✦</span>
-                  <span className="leading-relaxed"><strong className="text-slate-800 font-bold mr-1">建议环境：</strong>将本站网址复制到系统浏览器中打开，部分内置浏览器可能不支持生成长图。</span>
+                  <span className="leading-relaxed"><strong className="text-slate-800 font-bold mr-1">运行建议：</strong>将本站网址复制到系统浏览器中打开，微信直接打开不支持导出报告。</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="text-red-500 text-lg font-bold leading-tight mt-[-2px]">♥</span>
