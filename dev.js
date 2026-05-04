@@ -12,15 +12,39 @@ fs.writeFileSync('.dev.vars', devVars.join('\n'));
 
 // Start the dev server
 const cmd = /^win/.test(process.platform) ? 'npx.cmd' : 'npx';
-const args = [
+
+// Log that we are starting vite
+console.log('Starting Vite server...');
+const vite = spawn(cmd, ["vite", "--port", "5173", "--host", "127.0.0.1"], { stdio: 'inherit' });
+
+// Log that we are starting wrangler
+console.log('Starting Wrangler proxy...');
+const wranglerArgs = [
   "wrangler", "pages", "dev", 
   "--d1", "DB=lifeteller_db", 
-  "--compatibility-flag=nodejs_compat", 
+  "--compatibility-flags=nodejs_compat", 
   "--port", "3000", 
   "--ip", "0.0.0.0", 
-  "--proxy", "5173", 
-  "--", "npx", "vite", "--port", "5173", "--host", "0.0.0.0"
+  "--proxy", "5173"
 ];
 
-const child = spawn(cmd, args, { stdio: 'inherit' });
-child.on('close', code => process.exit(code));
+// Give Vite a little time to start before starting Wrangler
+setTimeout(() => {
+  const wrangler = spawn(cmd, wranglerArgs, { stdio: 'inherit' });
+  
+  wrangler.on('close', code => {
+    vite.kill();
+    process.exit(code);
+  });
+}, 2000);
+
+// Cleanup
+process.on('SIGINT', () => {
+    vite.kill();
+    process.exit();
+});
+process.on('SIGTERM', () => {
+    vite.kill();
+    process.exit();
+});
+

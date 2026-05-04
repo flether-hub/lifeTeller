@@ -1,12 +1,22 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Settings, Ticket, Heart, Globe, Moon, Shield, ScrollText, UserCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AIOracleAnimation } from './AIOracleAnimation';
 
 export function Header({ config }: { config?: { totalLeft: number, ipLeft: number } }) {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
   const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsAdminLoggedIn(!!localStorage.getItem('admin_token'));
+    const handleStorageChange = () => {
+      setIsAdminLoggedIn(!!localStorage.getItem('admin_token'));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [location.pathname]);
 
   return (
     <header className="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 z-50 shadow-sm flex items-center justify-between px-6 py-1">
@@ -83,8 +93,12 @@ export function Header({ config }: { config?: { totalLeft: number, ipLeft: numbe
             </div>
 
             {/* Admin Login Icon */}
-            <Link to="/admin" className="p-2 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors" title="后台登录">
-              <Settings size={20} />
+            <Link to="/admin" className="p-2 rounded-full hover:bg-slate-200 transition-colors group" title={isAdminLoggedIn ? "已登录后台" : "后台登录"}>
+              {isAdminLoggedIn ? (
+                <Shield size={20} className="text-blue-500 group-hover:text-blue-600" />
+              ) : (
+                <Settings size={20} className="text-slate-400 group-hover:text-slate-700" />
+              )}
             </Link>
           </>
         ) : (

@@ -84,7 +84,7 @@ function LuckyVisual({ numbers, colors }: { numbers?: string, colors?: string })
   const parsedNumbers = numbers ? parseLuckyNumbers(numbers) : [];
 
   return (
-    <div className="float-none lg:float-left w-full lg:w-64 lg:mr-10 mb-8 lg:mb-4 relative">
+    <div className="float-left w-64 mr-10 mb-4 relative">
       <div className={`p-8 rounded-[2.5rem] shadow-sm border border-white/80 ring-1 ring-black/5 flex flex-col items-center justify-center relative overflow-hidden h-full min-h-[320px] ${luckyStats.color}`}>
         {/* Background decorative SVG */}
         <div className="absolute -top-8 -right-8 opacity-20 transition-transform duration-700 hover:rotate-180 hover:scale-110">
@@ -198,7 +198,62 @@ function BaZiVisual({ bazi }: { bazi: any[] }) {
   );
 }
 
-export function FortuneResultView({ result, userInfo }: { result: any, userInfo?: { name: string, gender: string, date: string, time: string, province: string, calendarType: string } }) {
+export function FortuneResultView(props: { result: any, userInfo?: { name: string, gender: string, date: string, time: string, province: string, calendarType: string } }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [scale, setScale] = React.useState(1);
+  const [height, setHeight] = React.useState<number | undefined>(undefined);
+
+  React.useEffect(() => {
+    const updateLayout = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.offsetWidth || window.innerWidth;
+        const targetWidth = 896;
+        let newScale = 1;
+        if (width < targetWidth && width > 0) {
+          newScale = width / targetWidth;
+        }
+        setScale(newScale);
+        
+        if (contentRef.current) {
+          setHeight(contentRef.current.offsetHeight * newScale);
+        }
+      }
+    };
+
+    updateLayout();
+    
+    let observer: ResizeObserver;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(updateLayout);
+      if (contentRef.current) observer.observe(contentRef.current);
+      if (containerRef.current?.parentElement) observer.observe(containerRef.current.parentElement);
+    }
+    
+    window.addEventListener('resize', updateLayout);
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      if (observer) observer.disconnect();
+    };
+  }, [props.result]);
+
+  return (
+    <div ref={containerRef} className="w-full relative overflow-hidden bg-slate-50 flex justify-center" style={{ height: height ? `${height}px` : 'auto' }}>
+      <div 
+        ref={contentRef}
+        className="origin-top-left absolute top-0 left-0" 
+        style={{ 
+          width: '896px', 
+          transform: `scale(${scale})`
+        }}
+      >
+         <FortuneResultViewInner {...props} />
+      </div>
+    </div>
+  );
+}
+
+function FortuneResultViewInner({ result, userInfo }: { result: any, userInfo?: { name: string, gender: string, date: string, time: string, province: string, calendarType: string } }) {
   if (!result) return null;
 
   const match = userInfo?.date?.match(/^(\d{4})/);
@@ -283,7 +338,7 @@ export function FortuneResultView({ result, userInfo }: { result: any, userInfo?
 
       <div className="p-8 space-y-8 relative z-10 max-w-5xl mx-auto">
         {/* 4 Pillars Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6">
           <ResultCard title="事业与学业" icon="💼" content={result.career} />
           <ResultCard title="财富与金钱" icon="💰" content={result.wealth} />
           <ResultCard title="家庭与六亲" icon="❤️" content={result.family} />
@@ -304,7 +359,7 @@ export function FortuneResultView({ result, userInfo }: { result: any, userInfo?
                 {result.decades.map((decade: any, idx: number) => {
                   const isCurrent = idx === currentDecadeIndex;
                   return (
-                    <div key={idx} className="relative flex items-start gap-4 md:gap-6 group">
+                    <div key={idx} className="relative flex items-start gap-6 group">
                       <div className={`mt-1 flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shrink-0 shadow-sm z-10 ${isCurrent ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
                         {isCurrent ? <Activity size={16} /> : <div className="w-2 h-2 rounded-full bg-slate-400"></div>}
                       </div>

@@ -463,11 +463,12 @@ export default function Home() {
                           <CalendarDays size={16} className="text-slate-500" /> 出生日期
                         </label>
                         <input
-                          type="date"
+                          type="text"
                           required
                           value={date}
                           onChange={(e) => setDate(e.target.value)}
-                          className="w-full h-[42px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all"
+                          placeholder="例如: 1990年1月1日 或 1990-01-01"
+                          className="w-full h-[42px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all placeholder:text-slate-300"
                         />
                       </div>
                     </div>
@@ -507,7 +508,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-4 md:gap-6">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                           <Sparkles size={16} className="text-slate-500" /> 解读模式

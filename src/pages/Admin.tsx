@@ -153,48 +153,59 @@ export default function Admin() {
     <div className="min-h-screen font-sans text-slate-800 flex flex-col relative overflow-x-hidden">
       <StarryBackground />
       <Header />
-      <div className="flex flex-1 overflow-hidden mt-16 z-10 pt-2 pb-6 px-4 gap-4 max-w-7xl mx-auto w-full h-[calc(100vh-4rem)]">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden mt-16 z-10 pt-2 pb-6 px-4 gap-4 max-w-7xl mx-auto w-full h-[calc(100vh-4rem)]">
         {/* Sidebar */}
-        <div className="w-64 bg-white/90 backdrop-blur-2xl border border-blue-100 flex flex-col shadow-xl rounded-2xl overflow-hidden shrink-0">
-          <div className="p-6 border-b border-blue-50 flex items-center justify-center">
+        <div className="w-full md:w-64 bg-white/90 backdrop-blur-2xl border border-blue-100 flex flex-col shadow-xl rounded-2xl overflow-hidden shrink-0">
+          <div className="hidden md:flex p-6 border-b border-blue-50 items-center justify-center">
             <h1 className="text-xl font-bold font-serif text-blue-800">
               管理中心
             </h1>
           </div>
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-none flex flex-row overflow-x-auto md:flex-col md:flex-1 p-2 md:p-4 gap-2 md:gap-0 md:space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <button 
               onClick={() => setActiveTab('readings')}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition ${activeTab === 'readings' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm' : 'hover:bg-slate-50 text-slate-500'}`}
+              className={`flex-1 shrink-0 md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'readings' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
             >
-              <List size={20} /> 查询记录
+              <List size={20} className="shrink-0" /> <span className="hidden md:inline">查询记录</span>
             </button>
             <button 
               onClick={() => setActiveTab('map')}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition ${activeTab === 'map' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm' : 'hover:bg-slate-50 text-slate-500'}`}
+              className={`flex-1 shrink-0 md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'map' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
             >
-              <MapIcon size={20} /> 来源分布
+              <MapIcon size={20} className="shrink-0" /> <span className="hidden md:inline">来源分布</span>
             </button>
             <button 
               onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition ${activeTab === 'settings' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm' : 'hover:bg-slate-50 text-slate-500'}`}
+              className={`flex-1 shrink-0 md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'settings' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
             >
-              <Settings size={20} /> 系统设置
+              <Settings size={20} className="shrink-0" /> <span className="hidden md:inline">系统设置</span>
+            </button>
+            <button onClick={() => {
+              setToken(''); 
+              localStorage.removeItem('admin_token');
+              window.location.href = '/';
+            }} className="md:hidden shrink-0 flex items-center justify-center gap-2 text-rose-500 hover:text-rose-600 transition bg-rose-50 hover:bg-rose-100 px-4 py-3 rounded-xl font-medium">
+               <LogOut size={18} />
             </button>
           </nav>
-          <div className="p-4 border-t border-blue-50">
-            <button onClick={() => {setToken(''); localStorage.removeItem('admin_token')}} className="flex items-center justify-center gap-2 text-slate-500 hover:text-rose-500 transition w-full bg-slate-50 p-2 rounded-xl">
+          <div className="hidden md:block p-4 border-t border-blue-50">
+            <button onClick={() => {
+              setToken(''); 
+              localStorage.removeItem('admin_token');
+              window.location.href = '/';
+            }} className="flex items-center justify-center gap-2 text-slate-500 hover:text-rose-500 transition w-full bg-slate-50 hover:bg-rose-50 p-2 rounded-xl">
                <LogOut size={18} /> 退出登录
             </button>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto bg-white/95 border border-blue-100 shadow-xl rounded-2xl p-8 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
+        <div className="flex-1 overflow-auto bg-white/95 border border-blue-100 shadow-xl rounded-2xl p-4 md:p-8 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
            {activeTab === 'readings' && (
              <div>
                <h2 className="text-2xl font-serif text-blue-800 font-bold mb-6">查询记录</h2>
-               <div className="bg-white rounded-xl overflow-hidden border border-blue-100 shadow-sm">
-                 <table className="w-full text-left">
+               <div className="bg-white rounded-xl overflow-x-auto border border-blue-100 shadow-sm">
+                 <table className="w-full text-left min-w-[600px]">
                    <thead className="bg-slate-50 border-b border-blue-100">
                      <tr>
                        <th className="p-4 font-medium text-slate-600">序号</th>
