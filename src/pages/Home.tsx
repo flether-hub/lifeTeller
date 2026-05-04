@@ -619,12 +619,11 @@ export default function Home() {
             <Sparkles size={14} className="text-amber-400" /> AI
             驱动易经八字推演
           </div>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4 tracking-tight drop-shadow-lg">
+          <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mb-3 tracking-tight drop-shadow-lg">
             天命微茫·八字探微
           </h1>
-          <p className="text-sm md:text-base text-slate-200 font-light leading-relaxed mb-6 drop-shadow">
+          <p className="text-sm md:text-base text-slate-200 font-light leading-relaxed mb-4 drop-shadow">
             深度解析您的生辰八字，融合传统易经与现代大模型技术，
-            <br />
             为您推演一生大运起伏、近期运势走向，并预测事业、财富、健康与姻缘的未来轨迹。
           </p>
         </motion.div>
@@ -1016,11 +1015,17 @@ export default function Home() {
           {/* Sidebar: Reminder Bar */}
           {!result && !isReading && (
             <aside className="w-full lg:w-[320px] shrink-0 bg-white border border-slate-100 rounded-[1.5rem] p-6 text-left shadow-sm flex flex-col gap-6">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
-                <h3 className="font-bold text-slate-800 text-base ml-2 tracking-widest leading-none">
+              <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                </div>
+                <h3 className="font-bold text-slate-800 text-lg tracking-wide ml-3">
                   行期指北
                 </h3>
               </div>
