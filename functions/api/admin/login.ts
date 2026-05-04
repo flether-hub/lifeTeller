@@ -1,4 +1,5 @@
 // @ts-ignore
+// @ts-ignore
 import jwt from 'jsonwebtoken';
 import { Env, initDatabase } from '../utils';
 
