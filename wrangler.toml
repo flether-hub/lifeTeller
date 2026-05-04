@@ -1,0 +1,10 @@
+# Cloudflare Pages Configuration
+name = "lifeteller"
+# pages_build_output_dir = "dist"
+compatibility_date = "2025-01-01"
+compatibility_flags = [ "nodejs_compat" ]
+
+[[d1_databases]]
+binding = "DB" # This binding name is used in context.env.DB
+database_name = "lifeteller_db"
+database_id = "00b368a2-89f0-4ae7-8519-f3eabba03dd3" # Replace with your D1 database ID after running: npx wrangler d1 create lifeteller_db
