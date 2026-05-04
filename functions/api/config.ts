@@ -1,7 +1,8 @@
-import { Env, getBeijingDateString, getSetting } from './utils';
+import { Env, getBeijingDateString, getSetting, initDatabase } from './utils';
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { env, request } = context;
+  await initDatabase(env.DB);
   const ip = request.headers.get('cf-connecting-ip') || '未知IP';
   const today = getBeijingDateString();
 

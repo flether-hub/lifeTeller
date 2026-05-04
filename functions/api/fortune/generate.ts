@@ -1,8 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
-import { Env, getSetting } from '../utils';
+import { Env, getSetting, initDatabase } from '../utils';
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { env, request } = context;
+  await initDatabase(env.DB);
   
   try {
     const { prompt } = await request.json() as { prompt: string };

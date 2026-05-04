@@ -1,7 +1,8 @@
-import { Env } from '../utils';
+import { Env, initDatabase } from '../utils';
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { env, request } = context;
+  await initDatabase(env.DB);
   const ip = request.headers.get('cf-connecting-ip') || '未知IP';
   
   try {

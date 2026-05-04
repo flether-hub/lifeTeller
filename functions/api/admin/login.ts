@@ -1,8 +1,9 @@
 import jwt from 'jsonwebtoken';
-import { Env } from '../utils';
+import { Env, initDatabase } from '../utils';
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { env, request } = context;
+  await initDatabase(env.DB);
   const { password } = await request.json() as { password?: string };
 
   if (password === env.ADMIN_PASSWORD) {
