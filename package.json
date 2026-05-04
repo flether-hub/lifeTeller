@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && tsc --project tsconfig.server.json && echo '{\"type\": \"commonjs\"}' > dist-server/package.json",
-    "start": "node dist-server/server.js",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --target=node22 --outfile=dist-server/server.cjs --format=cjs --external:better-sqlite3 --external:vite --external:express --external:jsonwebtoken --external:dotenv --external:@google/genai",
+    "start": "node dist-server/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist dist-server",
     "cf:dev": "wrangler pages dev dist --d1 DB=lifeteller_db --compatibility-flag=nodejs_compat",
@@ -20,6 +20,7 @@
     "clsx": "^2.1.1",
     "d3-geo": "^3.1.1",
     "dotenv": "^17.2.3",
+    "esbuild": "^0.28.0",
     "express": "^4.21.2",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",

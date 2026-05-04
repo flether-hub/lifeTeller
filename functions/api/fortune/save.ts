@@ -19,8 +19,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     let lat: number | null = null;
     let lon: number | null = null;
 
-    try {
-      if (ip && ip !== '::1' && ip !== '127.0.0.1' && ip !== '未知IP') {
+    // Cloudflare native geo info
+    const cf = (request as any).cf;
+    if (cf) {
+      ip_location = cf.region || cf.city || cf.country || '未知';
+      lat = cf.latitude ? parseFloat(cf.latitude) : null;
+      lon = cf.longitude ? parseFloat(cf.longitude) : null;
+    }
+
+    // Fallback to IP API if location is still unknown and we have a valid IP
+    if (ip_location === '未知' && ip && ip !== '::1' && ip !== '127.0.0.1' && ip !== '未知IP') {
+      try {
         const geoRes = await fetch(`http://ip-api.com/json/${ip}?lang=zh-CN`);
         if (geoRes.ok) {
           const geoData: any = await geoRes.json();
@@ -30,8 +39,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             lon = geoData.lon;
           }
         }
+      } catch (e) {
+        console.error('Geo API error:', e);
       }
-    } catch (e) {}
+    }
 
     const result = await env.DB.prepare(
       'SELECT id FROM readings WHERE ip = ? AND name = ? AND calendar_type = ? AND birth_date = ? AND birth_time = ? AND province = ?'

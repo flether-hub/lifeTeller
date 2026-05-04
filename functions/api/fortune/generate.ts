@@ -32,12 +32,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           
           if (text) {
             let processedText = text.trim();
-            // Clean markdown and non-json wrappers
+            // Clean markdown blocks first
             processedText = processedText
-              .replace(/^[^{]*(\{[\s\S]*\})[^}]*$/, '$1')
               .replace(/^```json\s*/i, '')
               .replace(/\s*```$/i, '')
+              .replace(/^```\s*/, '')
+              .replace(/\s*```$/, '')
               .trim();
+            
+            // If it still doesn't look like JSON, try extracting the first { to the last }
+            if (!processedText.startsWith('{')) {
+              const match = processedText.match(/\{[\s\S]*\}/);
+              if (match) processedText = match[0];
+            }
             return processedText;
           }
         } catch (err: any) {
