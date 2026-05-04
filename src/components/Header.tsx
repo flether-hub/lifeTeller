@@ -36,6 +36,17 @@ export function Header({ config }: { config?: { totalLeft: number, ipLeft: numbe
       </div>
 
       <div className="flex items-center gap-3 sm:gap-5 text-sm text-slate-600">
+        {isAdmin && isAdminLoggedIn && (
+          <button
+            onClick={() => {
+              localStorage.removeItem("admin_token");
+              window.location.reload();
+            }}
+            className="flex items-center gap-2 text-rose-500 hover:text-rose-600 transition"
+          >
+            <LogOut size={18} /> <span className="hidden sm:inline">退出管理</span>
+          </button>
+        )}
         {!isAdmin && config ? (
           <>
             {/* Donate Icon */}
