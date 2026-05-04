@@ -4,7 +4,6 @@ import { StarryBackground } from '../components/StarryBackground';
 import { Heart, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import paymentQr from '../image/payment.png';
 
 export default function Donate() {
   const [config, setConfig] = useState({ totalLeft: 100, ipLeft: 3 });
@@ -51,7 +50,7 @@ export default function Donate() {
             {/* Placeholder for QR Code */}
             <div id="qr-code-container" className="w-[200px] h-[200px] rounded-xl flex flex-col items-center justify-center overflow-hidden relative mb-6 shadow-sm border border-slate-100">
               <img 
-                src={paymentQr}
+                src="/payment.png"
                 alt="" 
                 className="w-full h-full object-cover pointer-events-none select-none" 
               />

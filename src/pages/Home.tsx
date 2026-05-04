@@ -619,10 +619,10 @@ export default function Home() {
             <Sparkles size={14} className="text-amber-400" /> AI
             驱动易经八字推演
           </div>
-          <h1 className="text-5xl md:text-6xl font-serif font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4 tracking-tight drop-shadow-lg">
             天命微茫·八字探微
           </h1>
-          <p className="text-lg text-slate-200 font-light leading-relaxed mb-6 drop-shadow">
+          <p className="text-sm md:text-base text-slate-200 font-light leading-relaxed mb-6 drop-shadow">
             深度解析您的生辰八字，融合传统易经与现代大模型技术，
             <br />
             为您推演一生大运起伏、近期运势走向，并预测事业、财富、健康与姻缘的未来轨迹。
