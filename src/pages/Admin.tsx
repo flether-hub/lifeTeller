@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import { LogOut, Settings, List, Map as MapIcon, Home as HomeIcon, Eye, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { FortuneResultView } from '../components/FortuneResultView';
@@ -11,6 +11,7 @@ import { StarryBackground } from '../components/StarryBackground';
 import { generateExportData } from '../lib/exportUtils';
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState<'readings' | 'map' | 'settings'>('readings');
@@ -54,15 +55,23 @@ export default function Admin() {
 
   const loadData = async () => {
     try {
+      const getJson = async (res: Response) => {
+        const text = await res.text();
+        try { return JSON.parse(text); } catch { return {}; }
+      };
+      
       if (activeTab === 'readings') {
-        const r = await (await fetchWithToken(`/api/admin/readings?page=${page}&limit=${limit}`)).json();
+        const res = await fetchWithToken(`/api/admin/readings?page=${page}&limit=${limit}`);
+        const r = await getJson(res);
         setReadings(r.data);
         setTotal(r.total);
       } else if (activeTab === 'map') {
-        const m = await (await fetchWithToken('/api/admin/map-data')).json();
+        const res = await fetchWithToken('/api/admin/map-data');
+        const m = await getJson(res);
         setMapData(m);
       } else if (activeTab === 'settings') {
-        const s = await (await fetchWithToken('/api/admin/settings')).json();
+        const res = await fetchWithToken('/api/admin/settings');
+        const s = await getJson(res);
         setSettings(s);
       }
     } catch (e) {
@@ -78,7 +87,11 @@ export default function Admin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password })
     });
-    const data = await res.json();
+    
+    let data: any = {};
+    const text = await res.text();
+    try { data = JSON.parse(text); } catch { data.error = text || 'Login failed'; }
+    
     if (res.ok) {
       setToken(data.token);
       localStorage.setItem('admin_token', data.token);
@@ -164,26 +177,26 @@ export default function Admin() {
           <nav className="flex-none flex flex-row overflow-x-auto md:flex-col md:flex-1 p-2 md:p-4 gap-2 md:gap-0 md:space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <button 
               onClick={() => setActiveTab('readings')}
-              className={`flex-1 shrink-0 md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'readings' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
+              className={`flex-1 shrink-0 md:flex-none md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'readings' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
             >
               <List size={20} className="shrink-0" /> <span className="hidden md:inline">查询记录</span>
             </button>
             <button 
               onClick={() => setActiveTab('map')}
-              className={`flex-1 shrink-0 md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'map' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
+              className={`flex-1 shrink-0 md:flex-none md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'map' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
             >
               <MapIcon size={20} className="shrink-0" /> <span className="hidden md:inline">来源分布</span>
             </button>
             <button 
               onClick={() => setActiveTab('settings')}
-              className={`flex-1 shrink-0 md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'settings' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
+              className={`flex-1 shrink-0 md:flex-none md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === 'settings' ? 'bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent' : 'bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50'}`}
             >
               <Settings size={20} className="shrink-0" /> <span className="hidden md:inline">系统设置</span>
             </button>
             <button onClick={() => {
               setToken(''); 
               localStorage.removeItem('admin_token');
-              window.location.href = '/';
+              navigate('/');
             }} className="md:hidden shrink-0 flex items-center justify-center gap-2 text-rose-500 hover:text-rose-600 transition bg-rose-50 hover:bg-rose-100 px-4 py-3 rounded-xl font-medium">
                <LogOut size={18} />
             </button>
@@ -192,7 +205,7 @@ export default function Admin() {
             <button onClick={() => {
               setToken(''); 
               localStorage.removeItem('admin_token');
-              window.location.href = '/';
+              navigate('/');
             }} className="flex items-center justify-center gap-2 text-slate-500 hover:text-rose-500 transition w-full bg-slate-50 hover:bg-rose-50 p-2 rounded-xl">
                <LogOut size={18} /> 退出登录
             </button>
@@ -208,12 +221,12 @@ export default function Admin() {
                  <table className="w-full text-left min-w-[600px]">
                    <thead className="bg-slate-50 border-b border-blue-100">
                      <tr>
-                       <th className="p-4 font-medium text-slate-600">序号</th>
-                       <th className="p-4 font-medium text-slate-600">时间</th>
-                       <th className="p-4 font-medium text-slate-600">受测者姓名</th>
-                       <th className="p-4 font-medium text-slate-600">地域</th>
-                       <th className="p-4 font-medium text-slate-600">IP地址</th>
-                       <th className="p-4 font-medium text-slate-600 text-right">操作</th>
+                       <th className="p-4 font-medium text-slate-600 whitespace-nowrap">序号</th>
+                       <th className="p-4 font-medium text-slate-600 whitespace-nowrap">时间</th>
+                       <th className="p-4 font-medium text-slate-600 whitespace-nowrap">受测者姓名</th>
+                       <th className="p-4 font-medium text-slate-600 whitespace-nowrap">地域</th>
+                       <th className="p-4 font-medium text-slate-600 whitespace-nowrap">IP地址</th>
+                       <th className="p-4 font-medium text-slate-600 text-right whitespace-nowrap">操作</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-blue-50">
@@ -221,12 +234,12 @@ export default function Admin() {
                        const displayId = total - ((page - 1) * limit + index);
                        return (
                          <tr key={r.id} className="hover:bg-slate-50 transition">
-                           <td className="p-4 text-slate-500 text-sm">#{displayId}</td>
-                         <td className="p-4 text-slate-600">{r.created_at ? new Date(r.created_at).toLocaleString() : '-'}</td>
-                         <td className="p-4 font-medium text-blue-700">{r.name}</td>
-                         <td className="p-4 text-slate-600">{r.ip_location || r.province || '未知'}</td>
-                         <td className="p-4 font-mono text-sm text-slate-400">{r.ip}</td>
-                         <td className="p-4 text-right space-x-2">
+                           <td className="p-4 text-slate-500 text-sm whitespace-nowrap">#{displayId}</td>
+                         <td className="p-4 text-slate-600 whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleString() : '-'}</td>
+                         <td className="p-4 font-medium text-blue-700 whitespace-nowrap">{r.name}</td>
+                         <td className="p-4 text-slate-600 whitespace-nowrap">{r.ip_location || r.province || '未知'}</td>
+                         <td className="p-4 font-mono text-sm text-slate-400 whitespace-nowrap">{r.ip}</td>
+                         <td className="p-4 text-right space-x-2 whitespace-nowrap">
                             <button 
                               onClick={() => viewReading(r)}
                               className="text-blue-500 hover:text-blue-700 transition"

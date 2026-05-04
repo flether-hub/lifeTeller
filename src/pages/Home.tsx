@@ -57,7 +57,7 @@ export default function Home() {
   const [name, setName] = useState(() => localStorage.getItem('last_name') || '');
   const [gender, setGender] = useState(() => localStorage.getItem('last_gender') || '男');
   const [calendarType, setCalendarType] = useState(() => localStorage.getItem('last_calendarType') || '阳历');
-  const [date, setDate] = useState(() => localStorage.getItem('last_date') || '');
+  const [date, setDate] = useState(() => localStorage.getItem('last_date') || '2000-01-01');
   const [time, setTime] = useState(() => localStorage.getItem('last_time') || SHICHEN[0].value);
   const [province, setProvince] = useState(() => localStorage.getItem('last_province') || PROVINCES[0]);
   const [tone, setTone] = useState(() => localStorage.getItem('last_tone') || TONE_OPTIONS[0]);
@@ -103,7 +103,10 @@ export default function Home() {
 
   useEffect(() => {
     fetch('/api/config')
-      .then(res => res.json())
+      .then(async res => {
+        const text = await res.text();
+        try { return JSON.parse(text); } catch { return {}; }
+      })
       .then(data => setConfig(data))
       .catch(err => console.error(err));
   }, []);
@@ -116,6 +119,27 @@ export default function Home() {
     }
     if (!date) {
       setError("缘主，请至少年月日输入准确的出生日期");
+      return;
+    }
+
+    const parseDateStr = (dateStr: string) => {
+      const nums = dateStr.match(/\d+/g);
+      if (nums && nums.length >= 3) {
+        const year = parseInt(nums[0]);
+        const month = parseInt(nums[1]);
+        const day = parseInt(nums[2]);
+        if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          const d = new Date(year, month - 1, day);
+          if (d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    if (!parseDateStr(date)) {
+      setError("出生日期格式不合法，请确保年份在 1900~2100 间且日期有效 (例如: 2000-01-01)");
       return;
     }
 
@@ -137,7 +161,11 @@ export default function Home() {
 
     try {
       const checkRes = await fetch('/api/fortune/check', { method: 'POST' });
-      const checkData = await checkRes.json();
+      const checkText = await checkRes.text();
+      let checkData: any = {};
+      try { checkData = JSON.parse(checkText); } catch (e) { 
+        if (!checkRes.ok) throw new Error(checkText || checkRes.statusText); 
+      }
       
       if (checkData.error) {
         throw new Error(checkData.error);
@@ -195,9 +223,20 @@ export default function Home() {
         body: JSON.stringify({ prompt })
       });
       
-      const genData = await genRes.json();
+      const genText = await genRes.text();
+      let genData: any = {};
+      try {
+        genData = JSON.parse(genText);
+      } catch (e) {
+        let errStr = genText || genRes.statusText;
+        if (errStr.includes("Rate exceeded")) errStr = "官方 AI 接口请求频率过高，请稍后重试。";
+        if (!genRes.ok) throw new Error(`${errStr}`);
+      }
+
       if (!genRes.ok || genData.error) {
-         throw new Error(`AI 推演服务暂时不可达: ${genData.error || genRes.statusText}`);
+         let errStr = genData.error || genRes.statusText;
+         if (errStr.includes("Rate exceeded")) errStr = "官方 AI 接口请求频率过高，请稍后重试。";
+         throw new Error(`${errStr}`);
       }
 
       let resultJson = genData.result || "{}";
@@ -314,7 +353,10 @@ export default function Home() {
       setResult(validated as FortuneResult);
       
       fetch('/api/config')
-        .then(r => r.json())
+        .then(async r => {
+          const text = await r.text();
+          try { return JSON.parse(text); } catch { return {}; }
+        })
         .then(d => setConfig(d));
     } catch (err: any) {
       setError(err.message);
@@ -361,7 +403,7 @@ export default function Home() {
       </div>
 
       {/* Main Content Area */}
-      <div className="relative bg-[#f8f9fa] flex-1 z-20 w-full pt-12 pb-24 border-t border-slate-200/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+      <div className="relative bg-[#f8f9fa] flex-1 z-20 w-full pt-8 pb-8 border-t border-slate-200/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         <main className="container mx-auto px-4 max-w-6xl flex flex-col lg:flex-row gap-8 items-start justify-center">
           
           {/* Main Content (Form/Loading/Result) */}
@@ -588,12 +630,12 @@ export default function Home() {
               key="result"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full max-w-4xl mt-8 bg-white rounded-3xl border border-slate-100 shadow-[0_20px_50px_rgb(0,0,0,0.06)] overflow-hidden mb-12"
+              className="w-full max-w-4xl mt-8 bg-white rounded-3xl border border-slate-100 shadow-[0_20px_50px_rgb(0,0,0,0.06)] overflow-hidden mb-8"
             >
               <FortuneResultView result={result} userInfo={{ name, gender, date, time, province, calendarType }} />
 
               <div className="p-8 pb-12 pt-0 space-y-8">
-                <div className="pt-2 flex justify-center gap-4 flex-wrap">
+                <div className="pt-2 flex flex-col sm:flex-row justify-center items-center gap-4">
                   <button
                     onClick={async () => {
                       setExportType('pdf');
@@ -608,7 +650,7 @@ export default function Home() {
                         alert('导出失败，请重试');
                       }
                     }}
-                    className="print-hide text-white hover:text-white text-sm font-medium tracking-widest border border-slate-800 bg-slate-800 hover:bg-slate-700 px-8 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2"
+                    className="print-hide w-full sm:w-48 justify-center text-white hover:text-white text-sm font-medium tracking-widest border border-slate-800 bg-slate-800 hover:bg-slate-700 px-8 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2"
                   >
                     生成 PDF 报告
                   </button>
@@ -626,13 +668,13 @@ export default function Home() {
                         alert('导出失败，请重试');
                       }
                     }}
-                    className="print-hide text-slate-800 hover:text-slate-900 text-sm font-medium tracking-widest border border-slate-300 hover:bg-slate-100 px-8 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2 bg-white"
+                    className="print-hide w-full sm:w-48 justify-center text-slate-800 hover:text-slate-900 text-sm font-medium tracking-widest border border-slate-300 hover:bg-slate-100 px-8 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2 bg-white"
                   >
                     存为长图
                   </button>
                   <button
                     onClick={reset}
-                    className="print-hide text-slate-500 hover:text-slate-700 text-sm font-medium tracking-widest px-8 py-3 rounded-xl transition-all"
+                    className="print-hide w-full sm:w-48 justify-center text-slate-500 hover:text-slate-700 text-sm font-medium tracking-widest px-8 py-3 rounded-xl transition-all flex items-center"
                   >
                     返回重测
                   </button>

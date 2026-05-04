@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AnimatedLogo } from './AnimatedLogo';
 
 export function Footer() {
   const [quote, setQuote] = useState<string | null>(null);
@@ -16,15 +17,9 @@ export function Footer() {
   }, []);
 
   return (
-    <footer className="w-full text-center py-10 border-t border-blue-100/50 text-slate-500 mt-auto relative z-10 bg-white/60 backdrop-blur-sm print-hide">
+    <footer className="w-full text-center py-6 border-t border-blue-100/50 text-slate-500 mt-auto relative z-10 bg-white/60 backdrop-blur-sm print-hide">
       <div className="flex items-center justify-center gap-3 mb-4 px-6 max-w-2xl mx-auto">
-        <svg viewBox="0 0 100 100" className="w-7 h-7 text-slate-300 shrink-0" fill="currentColor">
-          <path d="M 50 20 A 30 30 0 0 1 50 80 A 15 15 0 0 0 50 50 A 15 15 0 0 1 50 20 Z" fill="currentColor" />
-          <path d="M 50 20 A 30 30 0 0 0 50 80 A 15 15 0 0 0 50 50 A 15 15 0 0 1 50 20 Z" fill="#e2e8f0" />
-          <circle cx="50" cy="35" r="4" fill="#e2e8f0" />
-          <circle cx="50" cy="65" r="4" fill="currentColor" />
-          <circle cx="50" cy="50" r="28" fill="none" stroke="currentColor" strokeWidth="2" strokeOpacity="0.2"/>
-        </svg>
+        <AnimatedLogo size={28} grayscale={true} />
         {quote ? (
           <span className="font-serif italic text-[15px] text-slate-600 leading-relaxed text-left">"{quote}"</span>
         ) : (

@@ -12,7 +12,10 @@ export default function Donate() {
 
   useEffect(() => {
     fetch('/api/config')
-      .then(r => r.json())
+      .then(async r => {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch { return {}; }
+      })
       .then(data => setConfig(data))
       .catch(err => console.error(err));
   }, []);

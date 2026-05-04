@@ -34,53 +34,55 @@ export function AIOracleAnimation() {
         </defs>
 
         {elements.map((el, idx) => {
-          // Create more complex algorithmic paths
           const amplitude = el.amplitude * 1.5;
-          const freq = el.freq * 0.5;
+          
+          // Generate keyframes for the path to create a "dancing" effect
+          const getPath = (phase: number) => {
+            return `M 0 60 ${Array.from({length: 12}).map((_, i) => {
+              const x = (i + 1) * 80;
+              const angle = (i * 0.8) + phase + (idx * 0.5);
+              const cy = 60 + Math.sin(angle) * amplitude;
+              return `Q ${i * 80 + 40} ${cy} ${x} 60`;
+            }).join(' ')}`;
+          };
           
           return (
             <g key={idx}>
               {/* Primary Flow Path */}
               <motion.path
-                d={`M 0 60 ${Array.from({length: 10}).map((_, i) => {
-                  const x = (i + 1) * 80;
-                  const cy = 60 + (i % 2 === 0 ? amplitude : -amplitude);
-                  return `Q ${i * 80 + 40} ${cy} ${x} 60`;
-                }).join(' ')}`}
+                d={getPath(0)}
                 fill="none"
                 stroke={`url(#grad-${idx})`}
                 strokeWidth="1.2"
                 filter="url(#glow)"
-                initial={{ pathOffset: 0, opacity: 0.1 }}
+                initial={{ opacity: 0.1 }}
                 animate={{ 
-                  pathOffset: [0, 1],
-                  opacity: [0.1, 0.4, 0.1]
+                  d: [getPath(0), getPath(Math.PI), getPath(Math.PI * 2)],
+                  opacity: [0.2, 0.5, 0.2]
+                }}
+                transition={{
+                  duration: el.speed * 0.8,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: el.delay * 0.5
+                }}
+              />
+              
+              {/* Secondary Path - offset slightly for ribbon depth */}
+              <motion.path
+                d={getPath(0.5)}
+                fill="none"
+                stroke={el.color}
+                strokeWidth="0.8"
+                className="opacity-10"
+                animate={{ 
+                  d: [getPath(0.5), getPath(Math.PI + 0.5), getPath(Math.PI * 2 + 0.5)],
                 }}
                 transition={{
                   duration: el.speed,
                   repeat: Infinity,
-                  ease: "linear",
-                  delay: el.delay
-                }}
-              />
-              
-              {/* Secondary "AI Neural" dotted path */}
-              <motion.path
-                d={`M 0 60 ${Array.from({length: 20}).map((_, i) => {
-                  const x = (i + 1) * 40;
-                  const cy = 60 + (Math.sin(i * 0.5 + idx) * amplitude * 0.4);
-                  return `T ${x} 60`;
-                }).join(' ')}`}
-                fill="none"
-                stroke={el.color}
-                strokeWidth="0.5"
-                strokeDasharray="2 4"
-                className="opacity-20"
-                animate={{ x: [0, -40] }}
-                transition={{
-                  duration: el.speed * 0.5,
-                  repeat: Infinity,
-                  ease: "linear"
+                  ease: "easeInOut",
+                  delay: el.delay * 0.5 + 0.2
                 }}
               />
             </g>

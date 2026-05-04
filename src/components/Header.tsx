@@ -2,11 +2,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { Settings, Ticket, Heart, Globe, Moon, Shield, ScrollText, UserCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AIOracleAnimation } from './AIOracleAnimation';
+import { AnimatedLogo } from './AnimatedLogo';
 
 export function Header({ config }: { config?: { totalLeft: number, ipLeft: number } }) {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
-  const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -24,36 +24,9 @@ export function Header({ config }: { config?: { totalLeft: number, ipLeft: numbe
         <Link 
           to="/" 
           className="flex items-center gap-3 transition-all relative group"
-          onMouseEnter={() => setIsLogoHovered(true)}
-          onMouseLeave={() => setIsLogoHovered(false)}
           title="返回首页"
         >
-          {/* Logo with Taiji/Bagua SVG and effects */}
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center relative transition-all duration-1000
-            ${isLogoHovered ? 'shadow-[0_0_25px_rgba(30,41,59,0.3)] rotate-[720deg]' : 'shadow-[0_0_10px_rgba(15,23,42,0.1)] rotate-0'}`}
-          >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-300 via-slate-400 to-slate-600 opacity-20"></div>
-            <svg viewBox="0 0 200 200" className="w-8 h-8 drop-shadow-sm" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <radialGradient id="logoGrad" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#475569" />
-                  <stop offset="100%" stopColor="#0f172a" />
-                </radialGradient>
-              </defs>
-              <polygon points="60,10 140,10 190,60 190,140 140,190 60,190 10,140 10,60" fill="url(#logoGrad)" />
-              <circle cx="100" cy="100" r="50" fill="#fff" />
-              <path d="M 100 50 A 50 50 0 0 1 100 150 A 25 25 0 0 0 100 100 A 25 25 0 0 1 100 50 Z" fill="#0f172a" />
-              <path d="M 100 50 A 50 50 0 0 0 100 150 A 25 25 0 0 0 100 100 A 25 25 0 0 1 100 50 Z" fill="#fff" />
-              <circle cx="100" cy="75" r="8" fill="#0f172a" />
-              <circle cx="100" cy="125" r="8" fill="#fff" />
-              {/* Decorative rings */}
-              <circle cx="100" cy="100" r="90" stroke="#0f172a" strokeWidth="1" strokeOpacity="0.1" fill="none" />
-            </svg>
-            {isLogoHovered && (
-              <div className="absolute inset-[-4px] rounded-full border border-blue-400/30 animate-pulse"></div>
-            )}
-            <div className={`absolute inset-[-8px] rounded-full border border-blue-500/10 transition-transform duration-1000 ${isLogoHovered ? 'scale-110' : 'scale-100'}`}></div>
-          </div>
+          <AnimatedLogo size={40} />
           <span className="font-serif text-slate-800 font-bold text-xl tracking-widest hidden sm:block">lifeTeller</span>
         </Link>
       </div>
@@ -101,11 +74,7 @@ export function Header({ config }: { config?: { totalLeft: number, ipLeft: numbe
               )}
             </Link>
           </>
-        ) : (
-          <Link to="/" className="p-2 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors" title="返回首页">
-            <Moon size={20} />
-          </Link>
-        )}
+        ) : null}
       </div>
     </header>
   );
