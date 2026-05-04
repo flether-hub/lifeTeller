@@ -53,7 +53,6 @@ export default function Donate() {
               <img 
                 src={paymentQr}
                 alt="" 
-                crossOrigin="anonymous"
                 className="w-full h-full object-cover pointer-events-none select-none" 
               />
             </div>
