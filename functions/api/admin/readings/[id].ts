@@ -1,7 +1,8 @@
-import { Env, authenticateAdmin } from '../../utils';
+import { Env, authenticateAdmin, initDatabase } from '../../utils';
 
 export const onRequestDelete: PagesFunction<Env> = async (context) => {
   const { env, request, params } = context;
+  await initDatabase(env.DB);
   if (!await authenticateAdmin(request, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }

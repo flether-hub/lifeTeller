@@ -1,7 +1,8 @@
-import { Env, authenticateAdmin } from '../../utils';
+import { Env, authenticateAdmin, initDatabase } from '../../utils';
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { env, request } = context;
+  await initDatabase(env.DB);
   if (!await authenticateAdmin(request, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }

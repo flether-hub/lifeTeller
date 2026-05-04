@@ -3,6 +3,9 @@ name = "lifeteller"
 pages_build_output_dir = "dist"
 compatibility_flags = [ "nodejs_compat" ]
 
+[build]
+command = "npm run build"
+
 [[d1_databases]]
 binding = "DB" # This binding name is used in context.env.DB
 database_name = "lifeteller_db"
