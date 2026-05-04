@@ -12,6 +12,12 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    base: './',
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+      sourcemap: true,
+    },
     // Wrangler handles functions in /functions automatically
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',

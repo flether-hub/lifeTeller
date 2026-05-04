@@ -1,10 +1,14 @@
-# Cloudflare Pages Configuration
 name = "lifeteller"
-# pages_build_output_dir = "dist"
-compatibility_date = "2025-01-01"
-compatibility_flags = [ "nodejs_compat" ]
+pages_build_output_dir = "dist"
+compatibility_date = "2024-05-04"
 
+# 绑定 D1 数据库
 [[d1_databases]]
-binding = "DB" # This binding name is used in context.env.DB
+binding = "DB"
 database_name = "lifeteller_db"
-database_id = "00b368a2-89f0-4ae7-8519-f3eabba03dd3" # Replace with your D1 database ID after running: npx wrangler d1 create lifeteller_db
+# 如果要在本地使用 wrangler dev 测试，或者通过命令行预发布，请将下面的 ID 替换为您在 Cloudflare 面板中创建的实际 database_id
+database_id = "00b368a2-89f0-4ae7-8519-f3eabba03dd3" 
+
+# 环境变量设置参考 (通常敏感变量如密码和API KEY建议在 Cloudflare 面板的设置中填写，不提交到代码库)
+[vars]
+# NODE_VERSION = "20"

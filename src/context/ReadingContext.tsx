@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useRef,
+} from "react";
 
 interface FortuneResult {
   summary: string;
@@ -7,7 +14,14 @@ interface FortuneResult {
   wealth: string;
   family: string;
   health: string;
-  decades: Array<{ageRange: string, description: string, career: number, wealth: number, family: number, health: number}>;
+  decades: Array<{
+    ageRange: string;
+    description: string;
+    career: number;
+    wealth: number;
+    family: number;
+    health: number;
+  }>;
   luckyNumbers: string;
   luckyColors: string;
   iChingQuote: string;
@@ -26,19 +40,65 @@ interface ReadingContextType {
 
 const ReadingContext = createContext<ReadingContextType | undefined>(undefined);
 
+const maskLogs = (logs: string[]) =>
+  logs.map((l) => l.replace(/AIza[0-9A-Za-z-_]{35}/g, "AIzaSy***"));
+const maskError = (e: string | null) =>
+  e ? e.replace(/AIza[0-9A-Za-z-_]{35}/g, "AIzaSy***") : null;
+
 export function ReadingProvider({ children }: { children: ReactNode }) {
-  const [isReading, setIsReading] = useState(false);
+  const [isReading, setIsReading] = useState(() => {
+    return localStorage.getItem("kv_isReading") === "true";
+  });
   const [result, setResult] = useState<FortuneResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [error, setErrorState] = useState<string | null>(() => {
+    return localStorage.getItem("kv_error") || null;
+  });
+  const [debugLogs, setDebugLogsState] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem("kv_debugLogs");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const setIsReadingWrapped = (v: boolean) => {
+    setIsReading(v);
+    localStorage.setItem("kv_isReading", String(v));
+  };
+
+  const setError = (v: string | null) => {
+    const masked = maskError(v);
+    setErrorState(masked);
+    if (masked) {
+      localStorage.setItem("kv_error", masked);
+    } else {
+      localStorage.removeItem("kv_error");
+    }
+  };
+
+  const setDebugLogs = (v: string[] | ((prev: string[]) => string[])) => {
+    setDebugLogsState((prev) => {
+      const next = typeof v === "function" ? v(prev) : v;
+      const masked = maskLogs(next);
+      localStorage.setItem("kv_debugLogs", JSON.stringify(masked));
+      return masked;
+    });
+  };
 
   return (
-    <ReadingContext.Provider value={{
-      isReading, setIsReading,
-      result, setResult,
-      error, setError,
-      debugLogs, setDebugLogs
-    }}>
+    <ReadingContext.Provider
+      value={{
+        isReading,
+        setIsReading: setIsReadingWrapped,
+        result,
+        setResult,
+        error,
+        setError,
+        debugLogs,
+        setDebugLogs,
+      }}
+    >
       {children}
     </ReadingContext.Provider>
   );
@@ -47,7 +107,7 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 export function useReading() {
   const context = useContext(ReadingContext);
   if (!context) {
-    throw new Error('useReading must be used within a ReadingProvider');
+    throw new Error("useReading must be used within a ReadingProvider");
   }
   return context;
 }

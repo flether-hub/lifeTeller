@@ -34,31 +34,31 @@ export function AIOracleAnimation() {
         </defs>
 
         {elements.map((el, idx) => {
-          const amplitude = el.amplitude * 1.5;
+          const amplitude = el.amplitude * 1.8;
+          const h = 60;
           
-          // Generate keyframes for the path to create a "dancing" effect
-          const getPath = (phase: number) => {
-            return `M 0 60 ${Array.from({length: 12}).map((_, i) => {
-              const x = (i + 1) * 80;
-              const angle = (i * 0.8) + phase + (idx * 0.5);
-              const cy = 60 + Math.sin(angle) * amplitude;
-              return `Q ${i * 80 + 40} ${cy} ${x} 60`;
-            }).join(' ')}`;
+          // Generate paths for three phases of movement
+          const getD = (phase: number) => {
+            const pts = [
+              { x: 0, y: h },
+              { x: 200, y: h + Math.sin(phase + idx) * amplitude },
+              { x: 400, y: h + Math.sin(phase + idx + 1) * amplitude },
+              { x: 600, y: h + Math.sin(phase + idx + 2) * amplitude },
+              { x: 800, y: h }
+            ];
+            return `M 0 ${h} Q 100 ${pts[1].y} 200 ${h} Q 300 ${pts[2].y} 400 ${h} Q 500 ${pts[3].y} 600 ${h} Q 700 ${h + Math.sin(phase + idx + 3) * amplitude} 800 ${h}`;
           };
-          
+
           return (
             <g key={idx}>
-              {/* Primary Flow Path */}
               <motion.path
-                d={getPath(0)}
+                d={getD(0)}
                 fill="none"
                 stroke={`url(#grad-${idx})`}
-                strokeWidth="1.2"
-                filter="url(#glow)"
-                initial={{ opacity: 0.1 }}
+                strokeWidth="2.5"
                 animate={{ 
-                  d: [getPath(0), getPath(Math.PI), getPath(Math.PI * 2)],
-                  opacity: [0.2, 0.5, 0.2]
+                  d: [getD(0), getD(Math.PI), getD(Math.PI * 2)],
+                  opacity: [0.1, 0.4, 0.1]
                 }}
                 transition={{
                   duration: el.speed * 0.8,
@@ -68,15 +68,14 @@ export function AIOracleAnimation() {
                 }}
               />
               
-              {/* Secondary Path - offset slightly for ribbon depth */}
               <motion.path
-                d={getPath(0.5)}
+                d={getD(0.5)}
                 fill="none"
                 stroke={el.color}
-                strokeWidth="0.8"
-                className="opacity-10"
+                strokeWidth="1"
+                className="opacity-20"
                 animate={{ 
-                  d: [getPath(0.5), getPath(Math.PI + 0.5), getPath(Math.PI * 2 + 0.5)],
+                  d: [getD(0.5), getD(Math.PI + 0.5), getD(Math.PI * 2 + 0.5)],
                 }}
                 transition={{
                   duration: el.speed,
@@ -91,31 +90,25 @@ export function AIOracleAnimation() {
 
         {/* Floating Data Nodes - Connecting Destiny & Logic */}
         {Array.from({ length: 12 }).map((_, i) => (
-          <motion.g
+          <motion.circle
             key={`node-${i}`}
+            r="1.5"
+            fill="#818cf8"
             initial={{ opacity: 0 }}
             animate={{ 
               opacity: [0, 0.8, 0],
-              cx: [0, 800] 
+              cx: [(i * 60) % 800, ((i * 60) + 400) % 800],
+              cy: [20 + ((i * 10) % 80), 30 + ((i * 15) % 80)],
+              scale: [0.5, 1.2, 0.5]
             }}
-          >
-            <motion.circle
-              r="1.5"
-              fill="#818cf8"
-              animate={{ 
-                cx: [Math.random() * 800, (Math.random() * 800 + 400) % 800],
-                cy: [20 + Math.random() * 80, 20 + Math.random() * 80],
-                scale: [0.5, 1.2, 0.5]
-              }}
-              transition={{
-                duration: 10 + Math.random() * 10,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 1.5
-              }}
-              className="drop-shadow-[0_0_3px_rgba(129,140,248,0.8)]"
-            />
-          </motion.g>
+            transition={{
+              duration: 10 + i,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.5
+            }}
+            className="drop-shadow-[0_0_3px_rgba(129,140,248,0.8)]"
+          />
         ))}
       </svg>
 

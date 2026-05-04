@@ -19,7 +19,7 @@ export function Header({ config }: { config?: { totalLeft: number, ipLeft: numbe
   }, [location.pathname]);
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 z-50 shadow-sm flex items-center justify-between px-6 py-1">
+    <header className="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 z-50 shadow-sm flex items-center justify-between px-4 sm:px-6 py-3">
       <div className="flex items-center gap-3">
         <Link 
           to="/" 
@@ -27,7 +27,7 @@ export function Header({ config }: { config?: { totalLeft: number, ipLeft: numbe
           title="返回首页"
         >
           <AnimatedLogo size={40} />
-          <span className="font-serif text-slate-800 font-bold text-xl tracking-widest hidden sm:block">lifeTeller</span>
+          <span className="font-serif text-slate-800 font-bold text-lg sm:text-xl tracking-widest">lifeTeller</span>
         </Link>
       </div>
 
@@ -35,7 +35,7 @@ export function Header({ config }: { config?: { totalLeft: number, ipLeft: numbe
         <AIOracleAnimation />
       </div>
 
-      <div className="flex items-center gap-5 text-sm text-slate-600">
+      <div className="flex items-center gap-3 sm:gap-5 text-sm text-slate-600">
         {!isAdmin && config ? (
           <>
             {/* Donate Icon */}
