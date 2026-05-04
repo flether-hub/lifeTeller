@@ -247,18 +247,26 @@ export default function Admin() {
               <span className="hidden md:inline">系统设置</span>
             </button>
             <button
-              onClick={() => navigate("/")}
-              className="md:hidden shrink-0 flex items-center justify-center gap-2 text-slate-500 hover:text-blue-500 transition bg-slate-50 hover:bg-blue-50 px-4 py-3 rounded-xl font-medium"
+              onClick={() => {
+                setToken("");
+                localStorage.removeItem("admin_token");
+                navigate("/");
+              }}
+              className="md:hidden shrink-0 flex items-center justify-center gap-2 text-rose-500 hover:text-rose-600 transition bg-rose-50 hover:bg-rose-100 px-4 py-3 rounded-xl font-medium"
             >
-              <HomeIcon size={18} />
+              <LogOut size={18} />
             </button>
           </nav>
           <div className="hidden md:block p-4 border-t border-blue-50">
             <button
-              onClick={() => navigate("/")}
-              className="flex items-center justify-center gap-2 text-slate-500 hover:text-blue-500 transition w-full bg-slate-50 hover:bg-blue-50 p-2 rounded-xl"
+              onClick={() => {
+                setToken("");
+                localStorage.removeItem("admin_token");
+                navigate("/");
+              }}
+              className="flex items-center justify-center gap-2 text-slate-500 hover:text-rose-500 transition w-full bg-slate-50 hover:bg-rose-50 p-2 rounded-xl"
             >
-              <HomeIcon size={18} /> 返回主页
+              <LogOut size={18} /> 退出登录
             </button>
           </div>
         </div>
