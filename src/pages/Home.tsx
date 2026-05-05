@@ -640,7 +640,7 @@ export default function Home() {
       <Header config={config} />
 
       {/* Hero Section */}
-      <div className="relative pt-20 pb-8 md:pt-24 md:pb-10 px-4 z-10 flex flex-col items-center flex-shrink-0">
+      <div className="relative pt-20 pb-8 md:pt-24 md:pb-10 px-6 z-10 flex flex-col items-center flex-shrink-0">
         <StarryBackground />
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -663,7 +663,7 @@ export default function Home() {
 
       {/* Main Content Area */}
       <div className="relative bg-[#f8f9fa] flex-1 z-20 w-full pt-8 pb-8 border-t border-slate-200/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-        <main className="container mx-auto px-4 max-w-6xl flex flex-col lg:flex-row gap-8 items-start justify-center">
+        <main className="container mx-auto px-6 max-w-6xl flex flex-col lg:flex-row gap-8 items-start justify-center">
           {/* Main Content (Form/Loading/Result) */}
           <div
             className={cn(

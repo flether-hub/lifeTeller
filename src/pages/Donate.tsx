@@ -24,7 +24,7 @@ export default function Donate() {
       <StarryBackground />
       <Header config={config} />
       
-      <main className="flex-1 flex items-center justify-center p-4 pt-20 pb-12 z-10 w-full relative">
+      <main className="flex-1 flex items-center justify-center px-6 py-4 pt-20 pb-12 z-10 w-full relative">
         <div className="bg-white/80 backdrop-blur-xl p-6 sm:p-8 rounded-3xl w-full max-w-lg border border-blue-100 shadow-2xl relative z-10 text-center group">
           <button 
             onClick={() => navigate('/')} 

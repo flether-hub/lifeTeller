@@ -290,7 +290,7 @@ export function FortuneResultView(props: {
 
   return (
     <div 
-      className="w-full bg-slate-100/30 flex justify-center overflow-x-hidden min-h-screen py-4 md:py-10 print:p-0 print:bg-white"
+      className="w-full bg-slate-100/30 flex justify-center overflow-x-hidden min-h-screen py-4 md:py-10 px-4 md:px-0 print:p-0 print:bg-white"
       style={{ height: scale !== 1 ? `${contentHeight * scale + 60}px` : "auto" }}
     >
       <div
@@ -345,7 +345,7 @@ function FortuneResultViewInner({
   };
 
   return (
-    <div className="w-full bg-white font-sans text-slate-800 px-12 py-16 relative overflow-hidden">
+    <div className="w-full bg-white font-sans text-slate-800 px-6 sm:px-12 py-16 relative overflow-hidden">
       {/* Decorative Background */}
       <svg className="absolute inset-0 w-full h-full -z-10 opacity-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -355,7 +355,7 @@ function FortuneResultViewInner({
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
       </svg>
-      <div className="absolute inset-4 border border-indigo-100 pointer-events-none print:hidden opacity-50" />
+      {/* Decorative Border removed */}
       
       <div className="relative text-center mb-10 pb-8 border-b border-indigo-100">
         <div className="flex justify-center items-center gap-4 mb-2">

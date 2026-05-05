@@ -58,13 +58,13 @@ export function Footer() {
           <span className="font-serif font-bold text-xl text-slate-400">lifeTeller</span>
         )}
       </div>
-      <p className="text-sm px-4">免责声明: 本程序基于传统易学文化，预测结果仅供娱乐参考，切勿过度迷信。命运掌握在自己手中。</p>
+      <p className="text-sm px-6">免责声明: 本程序基于传统易学文化，预测结果仅供娱乐参考，切勿过度迷信。命运掌握在自己手中。</p>
       <p className="mt-3 text-sm">
         © {new Date().getFullYear()} lifeTeller. 
         {modelInfo ? (
-          <span className="ml-1 opacity-80">Powered by {modelInfo.providerName} ({modelInfo.modelId})</span>
+          <span className="ml-1 opacity-80">Powered by {modelInfo.modelId}</span>
         ) : (
-          <span className="ml-1 opacity-80">by AI.</span>
+          <span className="ml-1 opacity-80">Powered by Gemini</span>
         )}
       </p>
     </footer>

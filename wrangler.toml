@@ -1,5 +1,5 @@
 name = "lifeteller"
-pages_build_output_dir = "publish"
+pages_build_output_dir = "dist"
 compatibility_date = "2024-05-04"
 
 # 绑定 D1 数据库

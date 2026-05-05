@@ -230,7 +230,7 @@ export default function Admin() {
     <div className="min-h-screen font-sans text-slate-800 flex flex-col relative overflow-x-hidden">
       <StarryBackground />
       <Header />
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden mt-16 z-10 pt-2 pb-6 px-4 gap-4 max-w-7xl mx-auto w-full h-[calc(100vh-4rem)]">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden mt-16 z-10 pt-2 pb-6 px-6 gap-4 max-w-7xl mx-auto w-full h-[calc(100vh-4rem)]">
         {/* Sidebar */}
         <div className="w-full md:w-64 bg-white/90 backdrop-blur-2xl border border-blue-100 flex flex-col shadow-xl rounded-2xl overflow-hidden shrink-0">
           <div className="hidden md:flex p-6 border-b border-blue-50 items-center justify-center">

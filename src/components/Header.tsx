@@ -49,7 +49,7 @@ export function Header({ config: propConfig }: { config?: { totalLeft: number, i
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 z-50 shadow-sm flex items-center justify-between px-4 sm:px-6 py-3">
+    <header className="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 z-50 shadow-sm flex items-center justify-between px-6 py-3">
       <div className="flex items-center gap-3">
         <Link 
           to="/" 
