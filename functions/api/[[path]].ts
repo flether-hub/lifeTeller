@@ -451,6 +451,34 @@ export const onRequest = async (context: any) => {
         return errorResponse("Unauthorized", 401);
       }
 
+      if (request.method === "GET" && path === "admin/comments") {
+        const { results: comments } = await env.DB.prepare('SELECT * FROM comments ORDER BY created_at DESC').all();
+        return jsonResponse(comments || []);
+      }
+
+      if (request.method === "DELETE" && path.startsWith("admin/comments/")) {
+        const id = path.split("/")[2];
+        await env.DB.prepare('UPDATE comments SET is_deleted = 1 WHERE id = ?').bind(id).run();
+        return jsonResponse({ success: true });
+      }
+
+      if (request.method === "GET" && path === "admin/banned-ips") {
+        const { results: ips } = await env.DB.prepare('SELECT * FROM banned_ips').all();
+        return jsonResponse(ips || []);
+      }
+
+      if (request.method === "POST" && path === "admin/ban-ip") {
+        const { ip, reason } = await request.json();
+        await env.DB.prepare('INSERT OR REPLACE INTO banned_ips (ip, reason) VALUES (?, ?)').bind(ip, reason || '违规评论').run();
+        return jsonResponse({ success: true });
+      }
+
+      if (request.method === "DELETE" && path.startsWith("admin/ban-ip/")) {
+        const ip = path.split("/")[2];
+        await env.DB.prepare('DELETE FROM banned_ips WHERE ip = ?').bind(ip).run();
+        return jsonResponse({ success: true });
+      }
+
       if (request.method === "GET" && path === "admin/readings") {
         const urlParams = new URL(request.url).searchParams;
         const page = parseInt(urlParams.get("page") || "1");
