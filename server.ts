@@ -247,10 +247,21 @@ try {
       `).all();
       
       // Mask IP for privacy on frontend
-      const maskedComments = comments.map((c: any) => ({
-        ...c,
-        ip: c.ip ? c.ip.split('.').slice(0, 2).join('.') + '.*.*' : '未知'
-      }));
+      const maskedComments = comments.map((c: any) => {
+        let maskedIp = '未知';
+        if (c.ip) {
+          if (c.ip.includes(':')) {
+            const parts = c.ip.split(':');
+            maskedIp = parts.slice(0, 3).join(':') + ':****';
+          } else {
+            maskedIp = c.ip.split('.').slice(0, 2).join('.') + '.*.*';
+          }
+        }
+        return {
+          ...c,
+          ip: maskedIp
+        };
+      });
 
       res.json(maskedComments);
     } catch (err: any) {
@@ -325,7 +336,7 @@ try {
         const apiKey = aliyunRow?.value || '';
         
         if (!apiKey) {
-          res.write("\\n--STREAM-ERROR--\\n服务器未配置阿里云 API Key");
+          res.write("\n--STREAM-ERROR--\n服务器未配置阿里云 API Key");
           return res.end();
         }
 
@@ -412,7 +423,7 @@ try {
         const apiKey = geminiRow?.value || customKeyRow?.value || process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
-           res.write("\\n--STREAM-ERROR--\\n服务器未配置 Gemini API Key");
+           res.write("\n--STREAM-ERROR--\n服务器未配置 Gemini API Key");
            return res.end();
         }
 

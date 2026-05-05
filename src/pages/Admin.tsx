@@ -28,6 +28,7 @@ import {
   Cpu,
   MessageSquare,
   ShieldX,
+  Shield,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
@@ -77,7 +78,22 @@ export default function Admin() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [selectedReading, setSelectedReading] = useState<any>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'confirm' | 'prompt';
+    defaultValue?: string;
+    onConfirm: (val?: string) => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    onConfirm: () => {},
+  });
+  const [promptInput, setPromptInput] = useState("");
 
   // Export states
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -182,38 +198,52 @@ export default function Admin() {
     setTimeout(() => setMsg(""), 3000);
   };
 
-  const handleDeleteClick = (id: number) => {
-    setDeleteConfirmId(id);
+  const closeDialog = () => {
+    setDialogConfig(prev => ({...prev, isOpen: false}));
+    setPromptInput("");
   };
 
-  const confirmDelete = async () => {
-    if (!deleteConfirmId) return;
-    const id = deleteConfirmId;
-    try {
-      await fetchWithToken(`/api/admin/readings/${id}`, { method: "DELETE" });
-      setReadings(readings.filter((r) => r.id !== id));
-      setSelectedReadings(prev => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      setDeleteConfirmId(null);
-    } catch (e) {
-      console.error(e);
-      alert("删除失败");
-      setDeleteConfirmId(null);
-    }
+  const handleDeleteClick = (id: number) => {
+    setDialogConfig({
+      isOpen: true,
+      title: "确认删除？",
+      message: "此操作不可恢复，确定要删除这条记录吗？",
+      type: "confirm",
+      onConfirm: async () => {
+        closeDialog();
+        try {
+          await fetchWithToken(`/api/admin/readings/${id}`, { method: "DELETE" });
+          setReadings(readings.filter((r) => r.id !== id));
+          setSelectedReadings(prev => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        } catch (e) {
+          console.error(e);
+          setMsg("删除失败");
+          setTimeout(() => setMsg(""), 3000);
+        }
+      }
+    });
   };
 
   const handleBatchDeleteReadings = async () => {
     if (selectedReadings.size === 0) return;
-    if (!confirm(`确定要删除选中的 ${selectedReadings.size} 条查询记录吗？`)) return;
-    
-    await Promise.all(
-        Array.from(selectedReadings).map(id => fetchWithToken(`/api/admin/readings/${id}`, { method: "DELETE" }))
-    );
-    loadData();
-    setSelectedReadings(new Set());
+    setDialogConfig({
+      isOpen: true,
+      title: "确认批量删除？",
+      message: `确定要删除选中的 ${selectedReadings.size} 条查询记录吗？此操作不可恢复。`,
+      type: "confirm",
+      onConfirm: async () => {
+        closeDialog();
+        await Promise.all(
+            Array.from(selectedReadings).map(id => fetchWithToken(`/api/admin/readings/${id}`, { method: "DELETE" }))
+        );
+        loadData();
+        setSelectedReadings(new Set());
+      }
+    });
   };
 
   const toggleReadingSelection = (id: number) => {
@@ -233,28 +263,43 @@ export default function Admin() {
       }
   };
 
-  const handleDeleteComment = async (id: number) => {
-    if (!confirm("确定要删除这条评论吗？")) return;
-    await fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" });
-    setComments(comments.filter(c => c.id !== id));
-    setSelectedComments(prev => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
+  const handleDeleteComment = (id: number) => {
+    setDialogConfig({
+      isOpen: true,
+      title: "确认删除评论？",
+      message: "此操作不可恢复，确定要删除这条评论吗？",
+      type: "confirm",
+      onConfirm: async () => {
+        closeDialog();
+        await fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" });
+        setComments(comments.filter(c => c.id !== id));
+        setSelectedComments(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
     });
   };
 
-  const handleBatchDeleteComments = async () => {
+  const handleBatchDeleteComments = () => {
     if (selectedComments.size === 0) return;
-    if (!confirm(`确定要删除选中的 ${selectedComments.size} 条评论吗？`)) return;
-    
-    // Perform individual deletes as backend doesn't support batch, 
-    // but we can optimize or just map promises
-    await Promise.all(
-        Array.from(selectedComments).map(id => fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" }))
-    );
-    loadData();
-    setSelectedComments(new Set());
+    setDialogConfig({
+      isOpen: true,
+      title: "确认批量删除？",
+      message: `确定要删除选中的 ${selectedComments.size} 条评论吗？此操作不可恢复。`,
+      type: "confirm",
+      onConfirm: async () => {
+        closeDialog();
+        // Perform individual deletes as backend doesn't support batch, 
+        // but we can optimize or just map promises
+        await Promise.all(
+            Array.from(selectedComments).map(id => fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" }))
+        );
+        loadData();
+        setSelectedComments(new Set());
+      }
+    });
   };
 
   const toggleCommentSelection = (id: number) => {
@@ -274,20 +319,38 @@ export default function Admin() {
       }
   };
 
-  const handleBanIp = async (ip: string) => {
-    const reason = prompt("请输入封禁原因", "恶意评论/广告");
-    if (reason === null) return;
-    await fetchWithToken("/api/admin/ban-ip", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, reason })
+  const handleBanIp = (ip: string) => {
+    setDialogConfig({
+      isOpen: true,
+      title: "封禁 IP",
+      message: "请输入封禁原因：",
+      type: "prompt",
+      defaultValue: "恶意评论/广告",
+      onConfirm: async (reason) => {
+        closeDialog();
+        if (!reason) return;
+        await fetchWithToken("/api/admin/ban-ip", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ip, reason })
+        });
+        loadData();
+      }
     });
-    loadData();
   };
 
-  const handleUnbanIp = async (ip: string) => {
-    await fetchWithToken(`/api/admin/ban-ip/${ip}`, { method: "DELETE" });
-    setBannedIps(bannedIps.filter(b => b.ip !== ip));
+  const handleUnbanIp = (ip: string) => {
+    setDialogConfig({
+      isOpen: true,
+      title: "确认解封 IP？",
+      message: `确定要解封 IP ${ip} 吗？`,
+      type: "confirm",
+      onConfirm: async () => {
+        closeDialog();
+        await fetchWithToken(`/api/admin/ban-ip/${ip}`, { method: "DELETE" });
+        setBannedIps(bannedIps.filter(b => b.ip !== ip));
+      }
+    });
   };
 
   const viewReading = (reading: any) => {
@@ -902,7 +965,13 @@ export default function Admin() {
                     } catch (err) {
                       console.error(err);
                       setExportModalOpen(false);
-                      alert("导出失败，请重试");
+                      setDialogConfig({
+                        isOpen: true,
+                        title: "导出失败",
+                        message: "生成导出PDF失败，请稍后重试",
+                        type: "confirm",
+                        onConfirm: () => closeDialog()
+                      });
                     }
                   }}
                   className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-xs sm:text-sm font-medium border border-indigo-200 shadow-sm whitespace-nowrap"
@@ -924,7 +993,13 @@ export default function Admin() {
                     } catch (err) {
                       console.error(err);
                       setExportModalOpen(false);
-                      alert("导出失败，请重试");
+                      setDialogConfig({
+                        isOpen: true,
+                        title: "导出失败",
+                        message: "生成导出图片失败，请稍后重试",
+                        type: "confirm",
+                        onConfirm: () => closeDialog()
+                      });
                     }
                   }}
                   className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-xs sm:text-sm font-medium border border-slate-200 shadow-sm whitespace-nowrap"
@@ -1020,35 +1095,70 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Delete Confirm Modal */}
-      {deleteConfirmId !== null && (
+      {/* Generic Dialog */}
+      {dialogConfig.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-white p-8 rounded-[2rem] w-full max-w-sm flex flex-col items-center shadow-2xl border border-slate-100"
           >
-            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-6">
-              <Trash2 size={32} className="text-rose-500" />
-            </div>
+            {dialogConfig.title.includes("删除") ? (
+              <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-6">
+                <Trash2 size={32} className="text-rose-500" />
+              </div>
+            ) : dialogConfig.title.includes("封禁") ? (
+              <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-6">
+                <ShieldX size={32} className="text-rose-500" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                <Shield size={32} className="text-blue-500" />
+              </div>
+            )}
+            
             <h3 className="text-2xl font-bold mb-4 font-serif text-slate-800">
-              确认删除？
+              {dialogConfig.title}
             </h3>
-            <p className="text-slate-500 text-center mb-8">
-              此操作不可恢复，确定要删除这条记录吗？
+            <p className="text-slate-500 text-center mb-4">
+              {dialogConfig.message}
             </p>
-            <div className="flex w-full gap-4">
+
+            {dialogConfig.type === "prompt" && (
+              <div className="w-full mb-6">
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="请输入"
+                  value={promptInput || dialogConfig.defaultValue || ""}
+                  onChange={(e) => setPromptInput(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                />
+              </div>
+            )}
+
+            <div className="flex w-full gap-4 mt-2">
               <button
-                onClick={() => setDeleteConfirmId(null)}
+                onClick={closeDialog}
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors"
               >
                 取消
               </button>
               <button
-                onClick={confirmDelete}
-                className="flex-1 px-4 py-3 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 transition-colors shadow-sm"
+                onClick={() => {
+                  if (dialogConfig.type === "prompt") {
+                    dialogConfig.onConfirm(promptInput || dialogConfig.defaultValue || "");
+                  } else {
+                    dialogConfig.onConfirm();
+                  }
+                }}
+                className={`flex-1 px-4 py-3 rounded-xl text-white font-medium transition-colors shadow-sm ${
+                  dialogConfig.title.includes("删除") || dialogConfig.title.includes("封禁")
+                    ? "bg-rose-500 hover:bg-rose-600"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
               >
-                确认删除
+                {dialogConfig.title.includes("删除") ? "确认删除" : "确认"}
               </button>
             </div>
           </motion.div>
