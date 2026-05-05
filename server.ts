@@ -30,6 +30,12 @@ try {
   console.log(`Reading schema from: ${schemaPath}`);
   const schema = fs.readFileSync(schemaPath, 'utf8');
   db.exec(schema);
+  // Explicitly check for settings table
+  const settingsExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'").get();
+  if (!settingsExists) {
+      console.log("Settings table missing, creating it...");
+      db.exec(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`);
+  }
   console.log("Database initialized successfully.");
 } catch (err) {
   console.error("CRITICAL: Database initialization failed:", err);

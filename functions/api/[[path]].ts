@@ -316,6 +316,66 @@ export const onRequest = async (context: any) => {
       return jsonResponse({ providerName, modelId });
     }
 
+    if (request.method === "GET" && path === "comments") {
+      const { results: comments } = await env.DB.prepare(`
+        SELECT id, location, content, created_at, ip
+        FROM comments 
+        WHERE is_deleted = 0
+        ORDER BY created_at DESC 
+        LIMIT 10
+      `).all();
+      
+      const maskedComments = comments.map((c: any) => ({
+        ...c,
+        ip: c.ip ? c.ip.split('.').slice(0, 2).join('.') + '.*.*' : '未知'
+      }));
+      return jsonResponse(maskedComments);
+    }
+
+    if (request.method === "POST" && path === "comments") {
+      const body: any = await request.json();
+      const content = body.content;
+      if (!content || typeof content !== 'string') return errorResponse('评论内容不能为空');
+      if (content.length > 500) return errorResponse('评论内容过长');
+
+      const ip = getClientIp();
+      const cookies = request.headers.get("cookie") || '';
+      const match = cookies.match(/user_uid=([^;]+)/);
+      const userIdentifier = match ? match[1] : 'unknown';
+
+      const isBanned = await env.DB.prepare('SELECT 1 FROM banned_ips WHERE ip = ?').bind(ip).first();
+      if (isBanned) return errorResponse('您的 IP 已被禁止评论', 403);
+
+      // Simple rate limit in memory just for now, or check quotas table
+      const today = new Date().toISOString().split("T")[0];
+      const quota = await env.DB.prepare(`
+        SELECT comment_count FROM quotas 
+        WHERE ip = ? AND user_identifier = ? AND quota_date = ?
+      `).bind(ip, userIdentifier, today).first() as any;
+
+      if (quota && quota.comment_count >= 2) return errorResponse('每个用户每天限发2条评论', 429);
+
+      let location = "未知";
+      try {
+        const cf = (request as any).cf;
+        location = cf?.region || cf?.city || cf?.country || "未知";
+      } catch (e) {}
+
+      await env.DB.prepare(`
+        INSERT INTO comments (ip, user_identifier, location, content)
+        VALUES (?, ?, ?, ?)
+      `).bind(ip, userIdentifier, location, content).run();
+
+      await env.DB.prepare(`
+        INSERT INTO quotas (ip, user_identifier, quota_date, comment_count)
+        VALUES (?, ?, ?, 1)
+        ON CONFLICT(ip, user_identifier, quota_date) 
+        DO UPDATE SET comment_count = comment_count + 1
+      `).bind(ip, userIdentifier, today).run();
+
+      return jsonResponse({ success: true });
+    }
+
     if (request.method === "POST" && path === "fortune/save") {
       const body: any = await request.json();
       const ip = getClientIp();
