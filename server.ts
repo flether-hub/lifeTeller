@@ -290,6 +290,25 @@ try {
     }
   });
 
+  app.post('/api/admin/comments/batch-delete', authenticateAdmin, (req, res) => {
+    try {
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: '无效的任务ID列表' });
+      }
+
+      const stmt = db.prepare('UPDATE comments SET is_deleted = 1 WHERE id = ?');
+      const deleteMany = db.transaction((commentIds) => {
+        for (const id of commentIds) stmt.run(id);
+      });
+
+      deleteMany(ids);
+      res.json({ success: true, count: ids.length });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/admin/banned-ips', authenticateAdmin, (req, res) => {
     try {
       const ips = db.prepare('SELECT * FROM banned_ips').all();

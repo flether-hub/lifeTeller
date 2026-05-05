@@ -271,33 +271,48 @@ export default function Admin() {
       type: "confirm",
       onConfirm: async () => {
         closeDialog();
-        await fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" });
-        setComments(comments.filter(c => c.id !== id));
-        setSelectedComments(prev => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
+        try {
+          const res = await fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" });
+          if (res.ok) {
+            setComments(prev => prev.filter(c => c.id !== id));
+            setSelectedComments(prev => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          }
+        } catch (error) {
+          console.error("Delete failed:", error);
+        }
       }
     });
   };
 
   const handleBatchDeleteComments = () => {
     if (selectedComments.size === 0) return;
+    const idsToDelete = Array.from(selectedComments);
     setDialogConfig({
       isOpen: true,
       title: "确认批量删除？",
-      message: `确定要删除选中的 ${selectedComments.size} 条评论吗？此操作不可恢复。`,
+      message: `确定要删除选中的 ${idsToDelete.length} 条评论吗？此操作不可恢复。`,
       type: "confirm",
       onConfirm: async () => {
         closeDialog();
-        // Perform individual deletes as backend doesn't support batch, 
-        // but we can optimize or just map promises
-        await Promise.all(
-            Array.from(selectedComments).map(id => fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" }))
-        );
-        loadData();
-        setSelectedComments(new Set());
+        try {
+          const res = await fetchWithToken(`/api/admin/comments/batch-delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: idsToDelete })
+          });
+          if (res.ok) {
+            setComments(prev => prev.filter(c => !selectedComments.has(c.id)));
+            setSelectedComments(new Set());
+          }
+        } catch (error) {
+          console.error("Batch delete failed:", error);
+          // Fallback to reload if state becomes inconsistent
+          loadData();
+        }
       }
     });
   };
