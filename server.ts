@@ -60,14 +60,47 @@ try {
     return ip;
   };
 
-  const getTodaysCount = () => {
-    const today = new Date().toISOString().split('T')[0];
-    return (db.prepare("SELECT COUNT(*) as count FROM readings WHERE date(created_at) = ?").get(today) as any)?.count || 0;
+  const getUserIdentifier = (req: express.Request) => {
+    const cookies = req.headers.cookie || '';
+    const match = cookies.match(/user_uid=([^;]+)/);
+    return match ? match[1] : 'unknown';
   };
 
-  const getIpTodaysCount = (ip: string) => {
+  const getQuotas = (ip: string, userIdentifier: string) => {
     const today = new Date().toISOString().split('T')[0];
-    return (db.prepare("SELECT COUNT(*) as count FROM readings WHERE ip = ? AND date(created_at) = ?").get(ip, today) as any)?.count || 0;
+    
+    // Ensure entry exists
+    db.prepare(`
+      INSERT OR IGNORE INTO quotas (ip, user_identifier, quota_date)
+      VALUES (?, ?, ?)
+    `).run(ip, userIdentifier, today);
+
+    const userQuota = db.prepare(`
+      SELECT usage_count, comment_count FROM quotas 
+      WHERE ip = ? AND user_identifier = ? AND quota_date = ?
+    `).get(ip, userIdentifier, today) as any || { usage_count: 0, comment_count: 0 };
+
+    const totalUsage = (db.prepare(`
+      SELECT SUM(usage_count) as total FROM quotas WHERE quota_date = ?
+    `).get(today) as any)?.total || 0;
+
+    return { userUsage: userQuota.usage_count, userComments: userQuota.comment_count, totalUsage };
+  };
+
+  const incrementUsage = (ip: string, userIdentifier: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    db.prepare(`
+      UPDATE quotas SET usage_count = usage_count + 1
+      WHERE ip = ? AND user_identifier = ? AND quota_date = ?
+    `).run(ip, userIdentifier, today);
+  };
+
+  const incrementCommentUsage = (ip: string, userIdentifier: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    db.prepare(`
+      UPDATE quotas SET comment_count = comment_count + 1
+      WHERE ip = ? AND user_identifier = ? AND quota_date = ?
+    `).run(ip, userIdentifier, today);
   };
 
   // API Routes
@@ -116,13 +149,13 @@ try {
     const limitTotal = parseInt(totalDailyLimitStr);
     const limitIp = parseInt(ipDailyLimitStr);
     const ip = getClientIp(req);
+    const userIdentifier = getUserIdentifier(req);
     
-    const countTotal = getTodaysCount();
-    const countIp = getIpTodaysCount(ip);
+    const { userUsage, totalUsage } = getQuotas(ip, userIdentifier);
 
     res.json({
-      totalLeft: Math.max(0, limitTotal - countTotal),
-      ipLeft: Math.max(0, limitIp - countIp)
+      totalLeft: Math.max(0, limitTotal - totalUsage),
+      ipLeft: Math.max(0, limitIp - userUsage)
     });
   });
 
@@ -133,11 +166,126 @@ try {
     const limitTotal = parseInt(totalDailyLimitStr);
     const limitIp = parseInt(ipDailyLimitStr);
     const ip = getClientIp(req);
+    const userIdentifier = getUserIdentifier(req);
     
-    if (getTodaysCount() >= limitTotal) return res.status(429).json({ error: '今日全站算力额度已耗尽，请明早重试' });
-    if (getIpTodaysCount(ip) >= limitIp) return res.status(429).json({ error: '您今日的测算额度已用完，请明早重试' });
+    const { userUsage, totalUsage } = getQuotas(ip, userIdentifier);
+    
+    if (totalUsage >= limitTotal) return res.status(429).json({ error: '今日全站算力额度已耗尽，请明早重试' });
+    if (userUsage >= limitIp) return res.status(429).json({ error: '您今日的测算额度已用完，请明早重试' });
     
     res.json({ success: true });
+  });
+
+  app.post('/api/comments', async (req, res) => {
+    try {
+      const { content } = req.body;
+      if (!content || typeof content !== 'string') return res.status(400).json({ error: '评论内容不能为空' });
+      if (content.length > 500) return res.status(400).json({ error: '评论内容过长' });
+
+      const ip = getClientIp(req);
+      const userIdentifier = getUserIdentifier(req);
+
+      // Check if IP is banned
+      const isBanned = db.prepare('SELECT 1 FROM banned_ips WHERE ip = ?').get(ip);
+      if (isBanned) return res.status(403).json({ error: '您的 IP 已被禁止评论' });
+
+      // Check quota
+      const { userComments } = getQuotas(ip, userIdentifier);
+      if (userComments >= 2) return res.status(429).json({ error: '每个用户每天限发2条评论' });
+
+      // Get location
+      let location = "未知";
+      try {
+        const geoResponse = await fetch(`http://ip-api.com/json/${ip}?lang=zh-CN`);
+        if (geoResponse.ok) {
+          const geoData = await geoResponse.json();
+          if (geoData.status === 'success') {
+            location = geoData.regionName || geoData.city || geoData.country || "未知";
+          }
+        }
+      } catch (e) {}
+
+      // Save comment
+      db.prepare(`
+        INSERT INTO comments (ip, user_identifier, location, content)
+        VALUES (?, ?, ?, ?)
+      `).run(ip, userIdentifier, location, content);
+
+      // Increment comment count
+      incrementCommentUsage(ip, userIdentifier);
+
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/comments', (req, res) => {
+    try {
+      const comments = db.prepare(`
+        SELECT id, location, content, created_at, ip
+        FROM comments 
+        WHERE is_deleted = 0
+        ORDER BY created_at DESC 
+        LIMIT 10
+      `).all();
+      
+      // Mask IP for privacy on frontend
+      const maskedComments = comments.map((c: any) => ({
+        ...c,
+        ip: c.ip ? c.ip.split('.').slice(0, 2).join('.') + '.*.*' : '未知'
+      }));
+
+      res.json(maskedComments);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/admin/comments', authenticateAdmin, (req, res) => {
+    try {
+      const comments = db.prepare('SELECT * FROM comments ORDER BY created_at DESC').all();
+      res.json(comments);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/admin/comments/:id', authenticateAdmin, (req, res) => {
+    try {
+      db.prepare('UPDATE comments SET is_deleted = 1 WHERE id = ?').run(req.params.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/admin/banned-ips', authenticateAdmin, (req, res) => {
+    try {
+      const ips = db.prepare('SELECT * FROM banned_ips').all();
+      res.json(ips);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/admin/ban-ip', authenticateAdmin, (req, res) => {
+    try {
+      const { ip, reason } = req.body;
+      db.prepare('INSERT OR REPLACE INTO banned_ips (ip, reason) VALUES (?, ?)').run(ip, reason || '违规评论');
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/admin/ban-ip/:ip', authenticateAdmin, (req, res) => {
+    try {
+      db.prepare('DELETE FROM banned_ips WHERE ip = ?').run(req.params.ip);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   app.post('/api/fortune/generate', async (req, res) => {
@@ -342,6 +490,11 @@ try {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       stmt.run(ip, ip_location, lat, lon, name, gender, calendar_type, date, time, province, JSON.stringify(resultJson));
+      
+      // Increment usage count
+      const userIdentifier = getUserIdentifier(req);
+      incrementUsage(ip, userIdentifier);
+
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

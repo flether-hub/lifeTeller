@@ -26,6 +26,8 @@ import {
   Save,
   Sparkles,
   Cpu,
+  MessageSquare,
+  ShieldX,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
@@ -39,7 +41,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [token, setToken] = useState(localStorage.getItem("admin_token") || "");
   const [password, setPassword] = useState("");
-  const [activeTab, setActiveTab] = useState<"readings" | "map" | "settings">(
+  const [activeTab, setActiveTab] = useState<"readings" | "map" | "settings" | "moderation">(
     "readings",
   );
 
@@ -58,6 +60,9 @@ export default function Admin() {
   const limit = 20;
 
   const [mapData, setMapData] = useState<any>({ points: [], provinces: [] });
+  const [comments, setComments] = useState<any[]>([]);
+  const [bannedIps, setBannedIps] = useState<any[]>([]);
+  const [modSubTab, setModSubTab] = useState<"comments" | "bans">("comments");
   const [settings, setSettings] = useState<any>({
     total_daily_limit: "",
     ip_daily_limit: "",
@@ -123,6 +128,14 @@ export default function Admin() {
         const res = await fetchWithToken("/api/admin/settings");
         const s = await getJson(res);
         setSettings((prev: any) => ({ ...prev, ...s }));
+      } else if (activeTab === "moderation") {
+        const res1 = await fetchWithToken("/api/admin/comments");
+        const c = await getJson(res1);
+        setComments(Array.isArray(c) ? c : []);
+
+        const res2 = await fetchWithToken("/api/admin/banned-ips");
+        const b = await getJson(res2);
+        setBannedIps(Array.isArray(b) ? b : []);
       }
     } catch (e) {
       console.error(e);
@@ -183,6 +196,28 @@ export default function Admin() {
       alert("删除失败");
       setDeleteConfirmId(null);
     }
+  };
+
+  const handleDeleteComment = async (id: number) => {
+    if (!confirm("确定要删除这条评论吗？")) return;
+    await fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" });
+    setComments(comments.filter(c => c.id !== id));
+  };
+
+  const handleBanIp = async (ip: string) => {
+    const reason = prompt("请输入封禁原因", "恶意评论/广告");
+    if (reason === null) return;
+    await fetchWithToken("/api/admin/ban-ip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ip, reason })
+    });
+    loadData();
+  };
+
+  const handleUnbanIp = async (ip: string) => {
+    await fetchWithToken(`/api/admin/ban-ip/${ip}`, { method: "DELETE" });
+    setBannedIps(bannedIps.filter(b => b.ip !== ip));
   };
 
   const viewReading = (reading: any) => {
@@ -259,6 +294,13 @@ export default function Admin() {
             >
               <Settings size={20} className="shrink-0" />{" "}
               <span className="hidden md:inline">系统设置</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("moderation")}
+              className={`flex-1 shrink-0 md:flex-none md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === "moderation" ? "bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent" : "bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50"}`}
+            >
+              <ShieldX size={20} className="shrink-0" />{" "}
+              <span className="hidden md:inline">内容审核</span>
             </button>
           </nav>
         </div>
@@ -447,6 +489,117 @@ export default function Admin() {
                   </ZoomableGroup>
                 </ComposableMap>
               </div>
+            </div>
+          )}
+
+          {activeTab === "moderation" && (
+            <div className="h-full flex flex-col">
+              <div className="flex items-center gap-4 mb-6">
+                <h2 className="text-2xl font-serif text-blue-800 font-bold pr-4 border-r border-slate-200">
+                  内容审核
+                </h2>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setModSubTab("comments")}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${modSubTab === 'comments' ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                  >
+                    评论管理
+                  </button>
+                  <button 
+                    onClick={() => setModSubTab("bans")}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${modSubTab === 'bans' ? 'bg-rose-100 text-rose-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                  >
+                    封禁列表
+                  </button>
+                </div>
+              </div>
+
+              {modSubTab === "comments" ? (
+                <div className="bg-white rounded-xl overflow-x-auto border border-blue-100 shadow-sm">
+                  <table className="w-full text-left min-w-[600px]">
+                    <thead className="bg-slate-50 border-b border-blue-100">
+                      <tr>
+                        <th className="p-4 font-medium text-slate-600">IP / 位置</th>
+                        <th className="p-4 font-medium text-slate-600">内容</th>
+                        <th className="p-4 font-medium text-slate-600">时间</th>
+                        <th className="p-4 font-medium text-slate-600 text-right">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-blue-50">
+                      {comments.map((c) => (
+                        <tr key={c.id} className={`hover:bg-slate-50 transition ${c.is_deleted ? 'opacity-40 grayscale' : ''}`}>
+                          <td className="p-4">
+                            <div className="text-sm font-medium text-slate-800">{c.ip}</div>
+                            <div className="text-[10px] text-slate-400">{c.location}</div>
+                          </td>
+                          <td className="p-4 w-1/2">
+                            <p className="text-sm text-slate-600 line-clamp-2">{c.content}</p>
+                          </td>
+                          <td className="p-4 text-xs text-slate-400 whitespace-nowrap">
+                            {new Date(c.created_at).toLocaleString()}
+                          </td>
+                          <td className="p-4 text-right space-x-3">
+                            <button 
+                              onClick={() => handleBanIp(c.ip)}
+                              className="text-orange-500 hover:text-orange-700 transition" 
+                              title="封禁 IP"
+                            >
+                              <ShieldX size={18} />
+                            </button>
+                            {!c.is_deleted && (
+                              <button 
+                                onClick={() => handleDeleteComment(c.id)}
+                                className="text-rose-500 hover:text-rose-700 transition" 
+                                title="删除评论"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {comments.length === 0 && (
+                        <tr><td colSpan={4} className="p-8 text-center text-slate-400">暂无评论数据</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl overflow-x-auto border border-blue-100 shadow-sm">
+                  <table className="w-full text-left min-w-[600px]">
+                    <thead className="bg-slate-50 border-b border-blue-100">
+                      <tr>
+                        <th className="p-4 font-medium text-slate-600">封禁 IP</th>
+                        <th className="p-4 font-medium text-slate-600">封禁原因</th>
+                        <th className="p-4 font-medium text-slate-600">封禁时间</th>
+                        <th className="p-4 font-medium text-slate-600 text-right">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-blue-50">
+                      {bannedIps.map((b) => (
+                        <tr key={b.ip} className="hover:bg-slate-50 transition">
+                          <td className="p-4 font-mono text-sm text-slate-800">{b.ip}</td>
+                          <td className="p-4 text-sm text-slate-600">{b.reason}</td>
+                          <td className="p-4 text-xs text-slate-400">
+                            {new Date(b.created_at).toLocaleString()}
+                          </td>
+                          <td className="p-4 text-right">
+                            <button 
+                              onClick={() => handleUnbanIp(b.ip)}
+                              className="text-blue-500 hover:text-blue-700 transition font-medium text-sm"
+                            >
+                              解封
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {bannedIps.length === 0 && (
+                        <tr><td colSpan={4} className="p-8 text-center text-slate-400">暂无黑名单数据</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

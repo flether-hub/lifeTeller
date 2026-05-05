@@ -1,88 +1,242 @@
 import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
 import { StarryBackground } from '../components/StarryBackground';
-import { Heart, X } from 'lucide-react';
+import { Heart, X, MessageSquare, Send, MapPin, User, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
+
+interface Comment {
+  id: number;
+  location: string;
+  content: string;
+  created_at: string;
+  ip: string;
+}
 
 export default function Donate() {
   const [config, setConfig] = useState<{ totalLeft: number, ipLeft: number } | undefined>(undefined);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Set user_uid cookie if not exists
+    const cookies = document.cookie;
+    if (!cookies.includes('user_uid=')) {
+      const uid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      document.cookie = `user_uid=${uid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    }
+
     fetch('/api/config')
-      .then(async r => {
-        const text = await r.text();
-        try { return JSON.parse(text); } catch { return {}; }
-      })
+      .then(r => r.json())
       .then(data => setConfig(data))
       .catch(err => console.error(err));
+
+    fetchComments();
   }, []);
+
+  const fetchComments = () => {
+    fetch('/api/comments')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setComments(data);
+      })
+      .catch(err => console.error(err));
+  };
+
+  const handlePostComment = async () => {
+    if (!newComment.trim()) return;
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newComment })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || '发布失败');
+      }
+      setNewComment('');
+      fetchComments();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen font-sans text-slate-800 flex flex-col relative overflow-x-hidden select-none">
       <StarryBackground />
       <Header config={config} />
       
-      <main className="flex-1 flex items-center justify-center px-6 py-4 pt-20 pb-12 z-10 w-full relative">
-        <div className="bg-white/80 backdrop-blur-xl p-6 sm:p-8 rounded-3xl w-full max-w-lg border border-blue-100 shadow-2xl relative z-10 text-center group">
+      <main className="flex-1 flex items-start justify-center px-6 py-4 pt-24 pb-12 z-10 w-full relative max-w-6xl mx-auto">
+        {/* Unified Container */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] w-full border border-blue-100 shadow-2xl relative z-10 flex flex-col lg:flex-row overflow-hidden min-h-[650px] group"
+        >
+          {/* Close Button - shared for the whole container now */}
           <button 
             onClick={() => navigate('/')} 
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 text-slate-400 hover:text-slate-600 transition-colors p-2 bg-slate-100/50 hover:bg-slate-200 rounded-full"
+            className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors p-2 bg-slate-100/50 hover:bg-slate-200 rounded-full z-20"
             title="关闭"
           >
-            <X size={18} className="sm:w-5 sm:h-5" />
+            <X size={20} />
           </button>
-          
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-inner">
-            <Heart size={28} className="sm:w-8 sm:h-8 text-rose-500 animate-pulse" />
-          </div>
-          
-          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-800 mb-4 px-2">支持我们的发展</h2>
-          
-          <p className="text-sm sm:text-base text-slate-600 mb-6 sm:mb-8 leading-relaxed px-2 sm:px-4">
-            感谢您使用 <strong className="font-bold text-slate-800">lifeTeller</strong>。本站的大模型调用与服务器托管均由开发者本人自费承担。如果这里的测算曾为您带来启发，欢迎随缘打赏，您的支持将全额用于抵扣服务器与AI调用成本，助力项目长存。愿您岁岁平安！
-          </p>
 
-          <div className="bg-slate-50/50 border border-slate-200 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-8 flex flex-col items-center">
-            <h3 className="text-sm sm:text-base font-medium text-slate-700 mb-4 sm:mb-6">微信扫码赞助</h3>
-            
-            {/* Placeholder for QR Code */}
-            <div id="qr-code-container" className="w-[180px] h-[180px] sm:w-[200px] sm:h-[200px] bg-white rounded-xl flex flex-col items-center justify-center overflow-hidden relative mb-4 sm:mb-6 shadow-sm border border-slate-100">
-              <img 
-                src="/payment.png"
-                alt="微信助力二维码" 
-                className="w-full h-full object-cover" 
-              />
+          {/* Left Side: Support Section (40%) */}
+          <div className="lg:w-[400px] p-8 sm:p-10 border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col items-center text-center shrink-0">
+            <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+              <Heart size={32} className="text-rose-500 animate-pulse" />
             </div>
             
-            <button 
-              onClick={async () => {
-                const el = document.getElementById('qr-code-container');
-                if (!el) return;
-                try {
-                  const { toJpeg } = await import('html-to-image');
-                  const url = await toJpeg(el, { 
-                    quality: 0.95,
-                    pixelRatio: 2,
-                    backgroundColor: '#ffffff',
-                    skipFonts: true
-                  });
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = 'payment.png';
-                  a.click();
-                } catch (e) {
-                  console.error('Failed to save QR code', e);
-                  alert('保存失败，请重试');
-                }
-              }}
-              className="text-sm px-6 py-2.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition font-medium tracking-wide shadow-sm mt-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900"
-            >
-              保存收款码为图片
-            </button>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-800 mb-4">支持我们的发展</h2>
+            
+            <p className="text-sm sm:text-base text-slate-600 mb-8 leading-relaxed px-2">
+              感谢您使用 <strong className="font-bold text-slate-800">lifeTeller</strong>。本站算力与存储均自费承担。打赏将全额用于抵扣成本，助力项目长存。愿您平安喜乐！
+            </p>
+
+            <div className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center">
+              <h3 className="text-sm sm:text-base font-medium text-slate-700 mb-6 font-serif">微信扫码赞助</h3>
+              
+              <div id="qr-code-container" className="w-[200px] h-[200px] bg-white rounded-xl flex flex-col items-center justify-center overflow-hidden relative mb-6 shadow-sm border border-slate-100">
+                <img 
+                  src="/payment.jpg"
+                  alt="微信助力二维码" 
+                  className="w-full h-full object-contain p-2" 
+                />
+              </div>
+              
+              <button 
+                onClick={async () => {
+                  const el = document.getElementById('qr-code-container');
+                  if (!el) return;
+                  try {
+                    const { toJpeg } = await import('html-to-image');
+                    const url = await toJpeg(el, { 
+                      quality: 0.95,
+                      pixelRatio: 2,
+                      backgroundColor: '#ffffff',
+                      skipFonts: true
+                    });
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'payment.jpg';
+                    a.click();
+                  } catch (e) {
+                    console.error('Failed to save QR code', e);
+                    alert('保存失败，请重试');
+                  }
+                }}
+                className="text-sm px-6 py-2.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition font-medium tracking-wide shadow-sm mt-2 active:scale-95"
+              >
+                保存收款码为图片
+              </button>
+            </div>
+            
+            <div className="mt-auto pt-8 text-xs text-slate-400">
+               您的每一分心意，都是我们继续前行的动力
+            </div>
           </div>
-        </div>
+
+          {/* Right Side: Comment Section (60%) */}
+          <div className="flex-1 p-8 sm:p-10 flex flex-col min-h-[500px] md:min-h-0 bg-white/30 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2.5 bg-blue-100 rounded-xl text-blue-600">
+                <MessageSquare size={22} />
+              </div>
+              <div>
+                <h3 className="text-xl font-serif font-bold text-slate-800">用户评论反馈</h3>
+                <p className="text-[10px] text-slate-400 font-sans tracking-wider mt-1">每一条建议我们都会认真倾听</p>
+              </div>
+              <span className="text-[10px] font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md ml-auto">每人每天限2条</span>
+            </div>
+
+            {/* Comment List */}
+            <div className="flex-1 space-y-4 mb-8 overflow-y-auto max-h-[450px] pr-4 custom-scrollbar">
+              <AnimatePresence mode="popLayout">
+                {comments.length === 0 ? (
+                  <div className="text-center py-20 text-slate-400 text-sm italic">
+                    暂无评论，留下您的第一条足迹吧
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <motion.div 
+                      key={comment.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="p-5 bg-white/60 hover:bg-white rounded-2xl border border-slate-100 transition-all shadow-sm hover:shadow-md"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500">
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 rounded-full">
+                            <User size={10} className="text-slate-400" />
+                            <span>{comment.ip}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 rounded-full text-blue-600">
+                            <MapPin size={10} className="text-blue-400" />
+                            <span>{comment.location}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 tabular-nums">
+                          <Clock size={10} />
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <p className="text-[13px] sm:text-sm text-slate-700 leading-relaxed break-all font-sans">
+                        {comment.content}
+                      </p>
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Post Comment Container */}
+            <div className="mt-auto pt-8 border-t border-slate-100 relative">
+              <div className="relative group">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="说点什么吧... (在这里留下您的愿望或对本站的建议)"
+                  className="w-full h-28 bg-slate-50 rounded-2xl border border-slate-200 p-5 text-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none resize-none placeholder:text-slate-400"
+                  maxLength={500}
+                  disabled={isSubmitting}
+                />
+                <button
+                  disabled={isSubmitting || !newComment.trim()}
+                  onClick={handlePostComment}
+                  className={`absolute bottom-4 right-4 p-2.5 bg-blue-600 text-white rounded-xl transition-all ${isSubmitting || !newComment.trim() ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-700 hover:scale-110 active:scale-90 shadow-xl shadow-blue-200'}`}
+                >
+                  <Send size={20} />
+                </button>
+              </div>
+              {error && (
+                <p className="text-xs text-rose-500 mt-2 ml-1 flex items-center gap-1.5 animate-pulse font-medium">
+                  <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                  {error}
+                </p>
+              )}
+              <div className="mt-4 flex items-center justify-center gap-6">
+                 <p className="text-[10px] text-slate-400 italic">
+                  * 评论经过风控系统审核后显示
+                </p>
+                <div className="h-3 w-[1px] bg-slate-100" />
+                 <p className="text-[10px] text-slate-400 italic">
+                  恶意言论将被永久封禁 IP
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </main>
 
       <Footer />
