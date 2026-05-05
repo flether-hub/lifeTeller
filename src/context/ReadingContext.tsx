@@ -46,9 +46,7 @@ const maskError = (e: string | null) =>
   e ? e.replace(/AIza[0-9A-Za-z-_]{35}/g, "AIzaSy***") : null;
 
 export function ReadingProvider({ children }: { children: ReactNode }) {
-  const [isReading, setIsReading] = useState(() => {
-    return localStorage.getItem("kv_isReading") === "true";
-  });
+  const [isReading, setIsReading] = useState(false);
   const [result, setResult] = useState<FortuneResult | null>(null);
   const [error, setErrorState] = useState<string | null>(() => {
     return localStorage.getItem("kv_error") || null;
@@ -64,7 +62,6 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
 
   const setIsReadingWrapped = (v: boolean) => {
     setIsReading(v);
-    localStorage.setItem("kv_isReading", String(v));
   };
 
   const setError = (v: string | null) => {

@@ -71,23 +71,41 @@ try {
   };
 
   // API Routes
+  // Cache for model info
+  let cachedModelInfo: any = null;
+  let lastCacheUpdate = 0;
+  const CACHE_TTL = 3600000; // 1 hour - model info rarely changes
+
   app.get('/api/model-info', (req, res) => {
     try {
+      const now = Date.now();
+      if (cachedModelInfo && (now - lastCacheUpdate < CACHE_TTL)) {
+        return res.json(cachedModelInfo);
+      }
+
       const provider = (db.prepare('SELECT value FROM settings WHERE key = ?').get('model_provider') as any)?.value || 'gemini';
       let modelId = '';
       let providerName = '';
 
       if (provider === 'aliyun') {
         modelId = (db.prepare('SELECT value FROM settings WHERE key = ?').get('aliyun_model_id') as any)?.value || 'qwen-plus';
-        providerName = '阿里云百炼 (Qwen)';
+        providerName = '阿里云百炼';
       } else {
         modelId = (db.prepare('SELECT value FROM settings WHERE key = ?').get('gemini_model_id') as any)?.value || 'gemini-2.0-flash';
         providerName = 'Google Gemini';
       }
 
-      res.json({ provider, modelId, providerName });
+      cachedModelInfo = { provider, modelId, providerName };
+      lastCacheUpdate = now;
+      res.json(cachedModelInfo);
     } catch (err) {
-      res.status(500).json({ error: 'Failed to fetch model info' });
+      console.error('Error fetching model info:', err);
+      // If we have a cache even if expired, use it
+      if (cachedModelInfo) {
+        return res.json(cachedModelInfo);
+      }
+      // Return a 200 with error instead of 500 to be gentler on the client
+      res.json({ error: 'Failed to fetch model info', provider: 'unknown', modelId: 'AI', providerName: 'AI' });
     }
   });
 
@@ -377,6 +395,9 @@ try {
       }
     });
     insertMany(settings);
+    // Invalidate cache
+    cachedModelInfo = null;
+    lastCacheUpdate = 0;
     res.json({ success: true });
   });
 

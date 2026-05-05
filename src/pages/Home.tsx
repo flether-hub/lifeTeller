@@ -13,6 +13,8 @@ import {
   MessageSquareText,
   Loader2,
   History,
+  Bot,
+  StopCircle,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { FortuneChart } from "../components/FortuneChart";
@@ -85,12 +87,10 @@ const TONE_OPTIONS = [
   "文言古籍",
   "温柔鼓励",
   "毒舌犀利",
-  "赛博朋克",
-  "中二动漫",
   "极简高深",
 ];
 
-const MODE_OPTIONS = ["精要模式", "深度解读"];
+const MODE_OPTIONS = ["精要解读", "深度解读"];
 
 interface FortuneResult {
   summary: string;
@@ -153,6 +153,21 @@ export default function Home() {
   const [exportReadyUrl, setExportReadyUrl] = useState<string | null>(null);
   const [exportType, setExportType] = useState<"pdf" | "image">("pdf");
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const addLog = (log: string) => {
+    setDebugLogs((prev) => [...prev, log]);
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsReading(false);
+      setError("推演已手动中断。");
+      addLog("[AI] 推演已手动终止，天机复归。");
+    }
+  };
 
   useEffect(() => {
     if (logsEndRef.current) {
@@ -195,6 +210,7 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/config")
       .then(async (res) => {
+        if (res.status === 429) return null;
         const text = await res.text();
         try {
           return JSON.parse(text);
@@ -202,7 +218,9 @@ export default function Home() {
           return {};
         }
       })
-      .then((data) => setConfig(data))
+      .then((data) => {
+        if (data) setConfig(data);
+      })
       .catch((err) => console.error(err));
   }, []);
 
@@ -260,17 +278,19 @@ export default function Home() {
     localStorage.setItem("last_tone", tone);
     localStorage.setItem("last_mode", mode);
 
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setIsReading(true);
     setResult(null);
     setError(null);
     setDebugLogs([]);
 
-    const addLog = (log: string) => {
-      setDebugLogs((prev) => [...prev, log]);
-    };
-
     try {
-      const checkRes = await fetch("/api/fortune/check", { method: "POST" });
+      const checkRes = await fetch("/api/fortune/check", { 
+        method: "POST",
+        signal: abortController.signal
+      });
       const checkText = await checkRes.text();
       let checkData: any = {};
       try {
@@ -301,10 +321,14 @@ export default function Home() {
 1. **必须**返回一个紧凑且合法的 JSON 对象。
 2. **严禁**包含任何 Markdown 格式代码块（如 \`\`\`json）。
 3. **严禁**输出省略号（如 "..." 或 "省略" 等）。所有字段、数组内容必须完整输出，不要偷懒！
-4. **必须包含以下所有顶层字段**，绝对不能遗漏：'bazi', 'nameLocationAnalysis', 'summary', 'recent', 'career', 'wealth', 'family', 'health', 'decades', 'luckyNumbers', 'luckyColors', 'iChingQuote'。
-5. **严禁**在 JSON 外包含任何文本、开场白或结束语。
-6. **语气风格**：【${tone}】。
-7. **字数要求**：${mode === "精要模式" ? "全文重点突出，总长限制在 800 字以内" : "全文详尽深刻，总长限制在 1200 字以内，务必保证每个字段的内容充实且结构完整"}。
+4. **绝对禁止**在 JSON 属性值中使用换行符（\n），请改用空格或符号连接。
+5. **必须包含以下所有顶层字段**，绝对不能遗漏：'bazi', 'nameLocationAnalysis', 'summary', 'recent', 'career', 'wealth', 'family', 'health', 'decades', 'luckyNumbers', 'luckyColors', 'iChingQuote'。
+6. **严禁**在 JSON 外包含任何文本、标记符号（如 \` \` \`json）、开场白或结束语。返回内容必须可以直接被 JSON.parse() 解析。
+7. **语气风格**：【${tone}】。
+8. **字数要求**：${mode === "精要解读" ? "全文重点突出，总长要求在 800 字左右" : "全文详尽深刻，内容涵盖方方面面，总长要求在 1200 字以上，务必保证每个字段的内容充实且结构完整"}。
+9. **内容质量控制**：严禁在字段内容中使用未转义的双引号（"），如果内容中必须出现引号，请改用中文引号（“”）或进行转义。
+10. **数据完整性**：绝对禁止输出省略号。
+11. **输出纯净度**：不要在 JSON 之外输出任何文字，包括类似 "这里是您的报告：" 之类的开场白。
 
 ### JSON 结构要求 (注意不要输出格式之外的注释，必须输出完整的列表数据)：
 {
@@ -316,7 +340,7 @@ export default function Home() {
   ],
   "nameLocationAnalysis": "姓名与地理位置的综合解读文本...",
   "summary": "人生总体评分与核心命题...",
-  "recent": "近期流年运势深度分析（必须包含去年、今年及未来3年，共计5年的具体年份运势分析）...",
+  "recent": "未来3年运势深度分析（必须详尽分析未来3年的运势走向，包含事业、财运、婚姻、健康）...",
   "career": "事业运势与建议...",
   "wealth": "财运走向与理财建议...",
   "family": "感情婚姻与家庭关系...",
@@ -336,6 +360,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
+        signal: abortController.signal
       });
 
       if (!genRes.ok) {
@@ -372,17 +397,24 @@ export default function Home() {
       let fullText = "";
       let lastReportedLen = 0;
       const progressPhases = [
-        { th: 50, msg: "大语言模型连接成功，正在推盘..." },
-        { th: 150, msg: "洞察八字格局，排演流年大运..." },
-        { th: 300, msg: "测算财富机运，推求前程事业..." },
-        { th: 500, msg: "勘破家庭尘缘，参详健康吉凶..." },
-        { th: 800, msg: "总批一生起伏，生成终局断言..." },
-        { th: 1200, msg: "排版天机命理数据..." },
+        { th: 20, msg: "天机枢纽通讯中，建立时空连接..." },
+        { th: 50, msg: "大语言模型接入完成，天命数据同步..." },
+        { th: 100, msg: "解析四柱八字，捕捉命理波动..." },
+        { th: 200, msg: "洞察阴阳五行，确定命局格神..." },
+        { th: 350, msg: "排演十年大运，观测岁运起伏..." },
+        { th: 500, msg: "测算财富机运，挖掘潜藏商机..." },
+        { th: 650, msg: "推求事业前程，定位职场方位..." },
+        { th: 800, msg: "勘破家庭尘缘，剖析亲情羁绊..." },
+        { th: 950, msg: "参详健康吉凶，预警脏腑盈亏..." },
+        { th: 1100, msg: "感悟周易经意，生成人生谶言..." },
+        { th: 1300, msg: "修饰命理文案，精校输出排版..." },
+        { th: 1500, msg: "数据封装备份，准备最终呈现..." },
       ];
 
       addLog("[AI] 与天机枢纽握手成功，开始接收推演数据流...");
 
       while (true) {
+        if (abortController.signal.aborted) throw new Error("推演已手动中断");
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
@@ -423,47 +455,63 @@ export default function Home() {
       // Ultra-Robust JSON Extraction and Cleaning
       const extractAndParseJson = (rawText: string) => {
         let text = rawText.trim();
-        if (text.startsWith("```json")) {
-           text = text.substring(7);
-        } else if (text.startsWith("```")) {
-           text = text.substring(3);
-        }
-        if (text.endsWith("```")) {
-           text = text.substring(0, text.length - 3);
-        }
-        text = text.trim();
         
-        // Step 1: Try direct parse
-        try {
-          return JSON.parse(text);
-        } catch (e) {}
+        // Step 0: Pre-clean non-printable characters and weird whitespace
+        text = text.replace(/[\x00-\x1F\x7F-\x9F]/g, " ");
 
-        // Step 2: Extract between first { and last }
+        // Step 1: Remove Markdown code blocks if they exist
+        const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/g;
+        let match;
+        let bestCandidate = text;
+        
+        // Find the most likely JSON block
+        while ((match = codeBlockRegex.exec(text)) !== null) {
+          if (match[1].includes('"bazi"') || match[1].includes('"summary"')) {
+            bestCandidate = match[1];
+            break;
+          }
+        }
+        
+        text = bestCandidate.trim();
+        
+        // Step 2: Extract between first { and last } if still not parsing
+        const tryParse = (str: string) => {
+          try {
+            // Remove trailing commas before parsing
+            const cleaned = str.trim()
+              .replace(/,\s*([}\]])/g, "$1") // trailing commas
+              .replace(/\n/g, " ")           // literal newlines
+              .replace(/\r/g, "");
+            return JSON.parse(cleaned);
+          } catch (e) {
+            return null;
+          }
+        };
+
+        let result = tryParse(text);
+        if (result) return result;
+
         const firstBrace = text.indexOf("{");
         const lastBrace = text.lastIndexOf("}");
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          let candidate = text.substring(firstBrace, lastBrace + 1);
-          try {
-             return JSON.parse(candidate);
-          } catch (e) {}
-
-          // Try to clean trailing commas
-          try {
-             const noTrailingCommas = candidate.replace(/,\s*([}\]])/g, "$1");
-             return JSON.parse(noTrailingCommas);
-          } catch(e) {}
-          
-          // Try to escape unescaped physical newlines within strings (highly prone to errors, last resort)
-          try {
-             // naive replacement: we assume structural newlines don't matter to JSON.parse, 
-             // but if they are inside strings they break it.
-             // We can just use a more forgiving parse or replace all physical newlines with space.
-             // Replacing with space is safer than \\n because it won't break string values too badly,
-             // and structural newlines become spaces which JSON parsing ignores.
-             const noNewlines = candidate.replace(/\n/g, " ").replace(/\r/g, "");
-             return JSON.parse(noNewlines.replace(/,\s*([}\]])/g, "$1"));
-          } catch (e) {}
+          text = text.substring(firstBrace, lastBrace + 1);
+          result = tryParse(text);
+          if (result) return result;
         }
+
+        // Final attempt: Heuristic cleaning
+        // Try to fix unescaped quotes inside strings (very basic)
+        // This regex looks for double quotes that are NOT preceded by : space { [ , and NOT followed by : , } ]
+        // It's not perfect but can help
+        try {
+          const aggressiveClean = text
+            .replace(/([^\s:{\[,])"([^\s:}\],])/g, '$1\\"$2')
+            .replace(/\n/g, " ")
+            .replace(/\r/g, "");
+          result = tryParse(aggressiveClean);
+          if (result) return result;
+        } catch (e) {}
+
         return null;
       };
 
@@ -557,6 +605,7 @@ export default function Home() {
 
       setResult(validated as FortuneResult);
       setIsReading(false);
+      abortControllerRef.current = null;
 
       fetch("/api/config")
         .then(async (r) => {
@@ -569,6 +618,9 @@ export default function Home() {
         })
         .then((d) => setConfig(d));
     } catch (err: any) {
+      if (err.name === 'AbortError' || err.message === '推演已手动中断') {
+        return; // Handled by handleStop
+      }
       setError(err.message);
       setShowDebug(true);
       addLog(err.message);
@@ -641,13 +693,13 @@ export default function Home() {
                     {/* Form Side */}
                     <div className="w-full md:w-2/3">
                       {hasLastReading && (
-                        <div className="mb-6 bg-slate-50/50 border border-slate-200/60 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center shrink-0">
-                              <History size={16} className="text-slate-600" />
+                        <div className="mb-6 bg-slate-50/50 border border-slate-200/60 rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm">
+                          <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                            <div className="w-9 h-9 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center shrink-0">
+                              <History size={14} className="text-slate-600" />
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-800">
+                            <div className="min-w-0">
+                              <p className="text-[11px] sm:text-xs font-medium text-slate-800 leading-tight">
                                 发现您有最近一次的测算记录
                               </p>
                             </div>
@@ -655,7 +707,7 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={handleRestoreLastReading}
-                            className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-xl shadow-sm border border-slate-200 transition whitespace-nowrap ml-4 shrink-0"
+                            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-slate-700 text-[10px] sm:text-xs font-medium rounded-xl shadow-sm border border-slate-200 transition whitespace-nowrap ml-2 sm:ml-4 shrink-0"
                           >
                             查看报告
                           </button>
@@ -673,7 +725,7 @@ export default function Home() {
                               required
                               value={name}
                               onChange={(e) => setName(e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all font-serif"
+                              className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all font-sans"
                               placeholder="推荐真实姓名"
                             />
                           </div>
@@ -686,7 +738,7 @@ export default function Home() {
                             <select
                               value={province}
                               onChange={(e) => setProvince(e.target.value)}
-                              className="w-full h-[42px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
+                              className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
                             >
                               {PROVINCES.map((p) => (
                                 <option
@@ -742,7 +794,7 @@ export default function Home() {
                               value={date}
                               onChange={(e) => setDate(e.target.value)}
                               placeholder="例如: 1990年1月1日 或 1990-01-01"
-                              className="w-full h-[42px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all placeholder:text-slate-300"
+                              className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all placeholder:text-slate-400"
                             />
                           </div>
                         </div>
@@ -756,7 +808,7 @@ export default function Home() {
                             <select
                               value={time}
                               onChange={(e) => setTime(e.target.value)}
-                              className="w-full h-[42px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
+                              className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
                             >
                               {SHICHEN.map((t) => (
                                 <option
@@ -803,7 +855,7 @@ export default function Home() {
                             <select
                               value={mode}
                               onChange={(e) => setMode(e.target.value)}
-                              className="w-full h-[42px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
+                              className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
                             >
                               {MODE_OPTIONS.map((m) => (
                                 <option key={m} value={m}>
@@ -824,7 +876,7 @@ export default function Home() {
                             <select
                               value={tone}
                               onChange={(e) => setTone(e.target.value)}
-                              className="w-full h-[42px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
+                              className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
                             >
                               {TONE_OPTIONS.map((t) => (
                                 <option key={t} value={t}>
@@ -849,7 +901,7 @@ export default function Home() {
                         >
                           <div className="relative flex items-center justify-center gap-2 px-6 py-4">
                             <Sparkles size={18} className="text-amber-400" />
-                            <span className="font-serif text-lg font-bold tracking-widest text-white">
+                            <span className="text-lg font-bold tracking-widest text-white">
                               {config && (config.ipLeft <= 0 || config.totalLeft <= 0)
                                 ? "今日额度已用完，请明日再来"
                                 : "开演八字神机"}
@@ -876,13 +928,32 @@ export default function Home() {
                   className="mt-12 flex flex-col items-center flex-1"
                 >
                   <div className="mb-6 w-full max-w-lg bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl p-5 shadow-sm h-48 overflow-y-auto text-left relative flex flex-col font-mono text-sm ring-1 ring-slate-900/5 select-text">
+                    {!error && (
+                      <button
+                        onClick={handleStop}
+                        className="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition-colors z-10"
+                        title="中断推演"
+                      >
+                        <StopCircle size={20} />
+                      </button>
+                    )}
                     <div className="flex flex-col gap-2">
                       {debugLogs.map((log, index) => (
                         <div
                           key={index}
-                          className="text-slate-600 break-words whitespace-pre-wrap border-b border-slate-100 last:border-0 pb-1 last:pb-0"
+                          className="text-slate-600 break-words whitespace-pre-wrap border-b border-slate-100 last:border-0 pb-1 last:pb-0 flex items-start gap-2"
                         >
-                          {log}
+                          {log.startsWith("[AI]") ? (
+                            <>
+                              <Bot
+                                size={14}
+                                className="mt-1 text-blue-500 shrink-0"
+                              />
+                              <span>{log.replace("[AI]", "").trim()}</span>
+                            </>
+                          ) : (
+                            <span>{log}</span>
+                          )}
                         </div>
                       ))}
                       {error && (
@@ -893,8 +964,10 @@ export default function Home() {
                       <div ref={logsEndRef} />
                     </div>
                   </div>
-                  <Bagua isReading={!error} />
-                  <p className="text-2xl font-serif text-slate-800 mt-8 animate-pulse tracking-widest drop-shadow-sm">
+                  <div className="scale-75 md:scale-100 origin-center">
+                    <Bagua isReading={!error} />
+                  </div>
+                  <p className="text-xl md:text-2xl font-bold text-slate-800 mt-6 animate-pulse tracking-wide md:tracking-widest drop-shadow-sm text-center px-6 max-w-sm">
                     {error ? "推演中断" : "正在参详天地造化，推演流年大运..."}
                   </p>
                   <p className="text-slate-500 mt-2 font-light">
@@ -919,7 +992,7 @@ export default function Home() {
                   key="result"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="w-full max-w-4xl mt-8 bg-white rounded-3xl border border-slate-100 shadow-[0_20px_50px_rgb(0,0,0,0.06)] overflow-hidden mb-8"
+                  className="w-full mt-8 overflow-hidden mb-8"
                 >
                   <FortuneResultView
                     result={result}
@@ -981,7 +1054,7 @@ export default function Home() {
                       </button>
                       <button
                         onClick={reset}
-                        className="print-hide w-full sm:w-48 justify-center text-slate-500 hover:text-slate-700 text-sm font-medium tracking-widest px-8 py-3 rounded-xl transition-all flex items-center"
+                        className="print-hide w-full sm:w-48 justify-center bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 text-sm font-medium tracking-widest px-8 py-3 rounded-xl transition-all flex items-center border border-slate-200 shadow-sm"
                       >
                         返回重测
                       </button>
@@ -995,7 +1068,7 @@ export default function Home() {
           {/* Sidebar: Reminder Bar */}
           {!result && !isReading && (
             <aside className="w-full lg:w-[320px] shrink-0 bg-white border border-slate-100 rounded-[1.5rem] p-6 text-left shadow-sm flex flex-col gap-6">
-              <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-center gap-4 pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
@@ -1005,9 +1078,18 @@ export default function Home() {
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
                 </div>
-                <h3 className="font-bold text-slate-800 text-lg tracking-wide ml-3">
+                <h3 className="font-bold text-slate-800 text-lg tracking-widest mx-1">
                   行期指北
                 </h3>
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                </div>
               </div>
 
               <div className="flex flex-col gap-5 text-sm text-slate-600">

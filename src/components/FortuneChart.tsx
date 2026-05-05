@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate?: string }) {
   if (!decades || !Array.isArray(decades) || decades.length === 0) return null;
@@ -64,30 +64,25 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
   const xTicks = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
   return (
-    <div className="w-full h-[450px] mt-8 bg-white p-6 rounded-3xl border border-slate-100 flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.02)] pb-8 relative overflow-hidden">
-      {/* Background AI Motif */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] select-none flex items-center justify-center overflow-hidden">
-        <svg width="100%" height="100%" viewBox="0 0 800 400" className="scale-150">
-          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-slate-900" />
-          </pattern>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-          <path d="M0 200 Q200 100 400 200 T800 200" stroke="currentColor" fill="none" strokeWidth="0.5" className="text-indigo-500" />
-          <path d="M0 220 Q200 320 400 220 T800 220" stroke="currentColor" fill="none" strokeWidth="0.5" className="text-indigo-400" />
-        </svg>
-      </div>
-
-      <div className="flex justify-between items-center mb-6 relative z-10 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-          <h3 className="text-slate-800 font-serif text-xl font-bold m-0 tracking-widest">一生天命走势图</h3>
+    <div className="w-full h-[450px] mt-4 flex flex-col relative overflow-hidden">
+      <div className="absolute top-2 right-2 flex items-center gap-4 text-[11px] font-medium z-20 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-100/50 shadow-sm print:hidden">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <span className="text-blue-600">事业</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="text-emerald-600">健康</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-pink-500" />
+          <span className="text-pink-600">感情</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-orange-500" />
+          <span className="text-orange-600">财富</span>
         </div>
       </div>
-      
-      <p className="text-[15px] text-slate-400 mb-8 text-center relative z-10 font-light shrink-0">
-        <span className="inline-block w-2 h-2 rounded-full bg-indigo-400/20 mr-1 animate-pulse" />
-        交互式解析：沿曲线滑动查看各流年维度的命理详细评分
-      </p>
 
       <div className="relative flex-1 w-full z-10 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -145,13 +140,6 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
                formatter={(value: any) => [`${value}分`, '']}
                labelFormatter={(label: any) => `${label}岁 运势推演`}
             />
-            <Legend 
-              verticalAlign="bottom" 
-              height={40} 
-              iconType="circle"
-              iconSize={10}
-              wrapperStyle={{ paddingTop: '30px', fontSize: '15px', color: '#64748b' }}
-            />
             <Area 
               type="monotone" 
               name="事业" 
@@ -162,6 +150,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
               fill="url(#colorCareer)" 
               isAnimationActive={true}
               animationDuration={2000}
+              legendType="none"
             />
             <Area 
               type="monotone" 
@@ -173,6 +162,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
               fill="url(#colorWealth)" 
               isAnimationActive={true}
               animationDuration={2000}
+              legendType="none"
             />
             <Area 
               type="monotone" 
@@ -184,6 +174,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
               fill="url(#colorFamily)" 
               isAnimationActive={true}
               animationDuration={2000}
+              legendType="none"
             />
             <Area 
               type="monotone" 
@@ -195,6 +186,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
               fill="url(#colorHealth)" 
               isAnimationActive={true}
               animationDuration={2000}
+              legendType="none"
             />
           </AreaChart>
         </ResponsiveContainer>

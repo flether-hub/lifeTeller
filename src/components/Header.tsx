@@ -19,19 +19,25 @@ export function Header({ config: propConfig }: { config?: { totalLeft: number, i
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!propConfig) {
-      fetch("/api/config")
-        .then(async (res) => {
-          try {
-            const data = JSON.parse(await res.text());
-            setLocalConfig(data);
-          } catch (e) {}
-        })
-        .catch(() => {});
-    } else {
+    // Only fetch if propConfig is missing AND we don't have localConfig yet
+    if (!propConfig && !localConfig) {
+      // Add a small random delay to avoid thundering herd with Home.tsx
+      const timer = setTimeout(() => {
+        fetch("/api/config")
+          .then(async (res) => {
+            if (res.status === 429) return; // Silent on rate limit
+            try {
+              const data = JSON.parse(await res.text());
+              setLocalConfig(data);
+            } catch (e) {}
+          })
+          .catch(() => {});
+      }, Math.random() * 500);
+      return () => clearTimeout(timer);
+    } else if (propConfig) {
       setLocalConfig(propConfig);
     }
-  }, [propConfig]);
+  }, [propConfig, localConfig]);
 
   const config = localConfig;
 

@@ -18,14 +18,34 @@ export function Footer() {
     } catch(e) {}
 
     // Fetch model info from API
-    fetch('/api/model-info')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.providerName && data.modelId) {
-          setModelInfo(data);
-        }
-      })
-      .catch(err => console.error('Failed to fetch model info:', err));
+    const fetchModelInfo = (retries = 2) => {
+      fetch('/api/model-info')
+        .then(res => {
+          if (res.status === 429) {
+            // Silently ignore rate limits for non-critical info
+            return null;
+          }
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          if (data && data.providerName && data.modelId) {
+            setModelInfo(data);
+          }
+        })
+        .catch(err => {
+          if (retries > 0 && !err.message.includes('429')) {
+            setTimeout(() => fetchModelInfo(retries - 1), 2000);
+          } else {
+            // Only log if it's not a rate limit
+            if (!err.message.includes('429')) {
+              console.error('Failed to fetch model info:', err);
+            }
+          }
+        });
+    };
+
+    fetchModelInfo();
   }, []);
 
   return (

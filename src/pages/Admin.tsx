@@ -23,6 +23,7 @@ import {
   Eye,
   Trash2,
   X,
+  Save,
   Sparkles,
   Cpu,
 } from "lucide-react";
@@ -450,17 +451,25 @@ export default function Admin() {
           )}
 
           {activeTab === "settings" && (
-            <div className="max-w-2xl h-full flex flex-col">
-              <h2 className="text-2xl font-serif text-blue-800 font-bold mb-6">
-                系统配置
-              </h2>
-              <form
-                onSubmit={handleSaveSettings}
-                className="bg-white p-6 rounded-xl border border-blue-100 shadow-sm space-y-5"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="w-full h-full flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-serif text-blue-800 font-bold">
+                  系统配置
+                </h2>
+                <button
+                  onClick={handleSaveSettings}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 active:scale-95"
+                  title="保存当前所有设置"
+                >
+                  <Save size={18} />
+                  <span>保存设置</span>
+                </button>
+              </div>
+
+              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-blue-100 shadow-sm space-y-8 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm text-slate-700 mb-1.5 font-medium">
+                    <label className="block text-sm text-slate-700 mb-2 font-medium ml-1">
                       每日全站总额度 (防刷限制)
                     </label>
                     <input
@@ -472,11 +481,11 @@ export default function Admin() {
                           total_daily_limit: e.target.value,
                         })
                       }
-                      className="w-full bg-slate-50 border border-blue-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+                      className="w-full bg-slate-50 border border-blue-100 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-slate-700 mb-1.5 font-medium">
+                    <label className="block text-sm text-slate-700 mb-2 font-medium ml-1">
                       单IP每日额度限制
                     </label>
                     <input
@@ -488,29 +497,30 @@ export default function Admin() {
                           ip_daily_limit: e.target.value,
                         })
                       }
-                      className="w-full bg-slate-50 border border-blue-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+                      className="w-full bg-slate-50 border border-blue-100 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition"
                     />
                   </div>
                 </div>
+
                 <div className="space-y-6">
                   {/* Gemini Configuration */}
-                  <div className={`p-4 rounded-2xl border ${settings.model_provider === "gemini" ? "bg-blue-50/50 border-blue-200 ring-2 ring-blue-500/10" : "bg-slate-50/30 border-slate-200"}`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                          <Sparkles size={22} className="text-blue-600" />
+                  <div className={`p-4 sm:p-6 rounded-2xl border transition-all ${settings.model_provider === "gemini" ? "bg-blue-50/40 border-blue-200 ring-4 ring-blue-500/5" : "bg-slate-50/20 border-slate-100"}`}>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                          <Sparkles size={24} className="text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-slate-800">Google Gemini</h3>
+                          <h3 className="font-bold text-slate-800 text-lg">Google Gemini</h3>
                           <p className="text-xs text-slate-500">强大的多模态大模型</p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setSettings({ ...settings, model_provider: "gemini" })}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                        className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
                           settings.model_provider === "gemini" 
-                          ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
                           : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                         }`}
                       >
@@ -518,48 +528,48 @@ export default function Admin() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <div>
-                        <label className="block text-xs text-slate-500 mb-1.5 ml-1">Gemini Model ID</label>
+                        <label className="block text-xs text-slate-500 mb-2 ml-1 font-medium">Gemini Model ID</label>
                         <input
                           type="text"
                           value={settings.gemini_model_id || "gemini-2.0-flash"}
                           onChange={(e) => setSettings({ ...settings, gemini_model_id: e.target.value })}
                           placeholder="gemini-2.0-flash..."
-                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition"
+                          className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition font-mono"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-slate-500 mb-1.5 ml-1">API Key</label>
+                        <label className="block text-xs text-slate-500 mb-2 ml-1 font-medium">API Key</label>
                         <input
                           type="password"
                           value={settings.gemini_api_key || ""}
                           onChange={(e) => setSettings({ ...settings, gemini_api_key: e.target.value })}
                           placeholder="留空即使用环境变量..."
-                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition"
+                          className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Aliyun Configuration */}
-                  <div className={`p-4 rounded-2xl border ${settings.model_provider === "aliyun" ? "bg-orange-50/50 border-orange-200 ring-2 ring-orange-500/10" : "bg-slate-50/30 border-slate-200"}`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                          <Cpu size={22} className="text-orange-600" />
+                  <div className={`p-4 sm:p-6 rounded-2xl border transition-all ${settings.model_provider === "aliyun" ? "bg-orange-50/40 border-orange-200 ring-4 ring-orange-500/5" : "bg-slate-50/20 border-slate-100"}`}>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                          <Cpu size={24} className="text-orange-600" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-slate-800">阿里云百炼 (Qwen)</h3>
+                          <h3 className="font-bold text-slate-800 text-lg">阿里云百炼</h3>
                           <p className="text-xs text-slate-500">阿里通义千问大模型</p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setSettings({ ...settings, model_provider: "aliyun" })}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                        className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
                           settings.model_provider === "aliyun" 
-                          ? "bg-orange-600 text-white shadow-md shadow-orange-200" 
+                          ? "bg-orange-600 text-white shadow-lg shadow-orange-200" 
                           : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                         }`}
                       >
@@ -567,39 +577,38 @@ export default function Admin() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <div>
-                        <label className="block text-xs text-slate-500 mb-1.5 ml-1">Qwen Model ID</label>
+                        <label className="block text-xs text-slate-500 mb-2 ml-1 font-medium">Qwen Model ID</label>
                         <input
                           type="text"
                           value={settings.aliyun_model_id || "qwen-plus"}
                           onChange={(e) => setSettings({ ...settings, aliyun_model_id: e.target.value })}
                           placeholder="qwen-plus..."
-                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                          className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition font-mono"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-slate-500 mb-1.5 ml-1">API Key</label>
+                        <label className="block text-xs text-slate-500 mb-2 ml-1 font-medium">API Key</label>
                         <input
                           type="password"
                           value={settings.aliyun_api_key || ""}
                           onChange={(e) => setSettings({ ...settings, aliyun_api_key: e.target.value })}
                           placeholder="请输入阿里云 API Key"
-                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                          className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
+
                 {msg && (
-                  <div className="bg-green-50 text-green-700 p-3 rounded-xl border border-green-200 text-sm">
+                  <div className="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-sm flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     {msg}
                   </div>
                 )}
-                <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] text-white px-8 py-3 rounded-xl font-bold font-serif tracking-widest transition shadow-md">
-                  保存设置
-                </button>
-              </form>
+              </div>
             </div>
           )}
         </div>
