@@ -20,8 +20,17 @@ export async function generateExportData(
 
   let oldElOverflow = el.style.overflow;
   let oldElHeight = el.style.height;
+  let oldElPosition = el.style.position;
+  let oldElLeft = el.style.left;
+  let oldElTop = el.style.top;
+  let oldElMargin = el.style.margin;
+
   el.style.overflow = 'visible';
   el.style.height = 'auto';
+  el.style.position = 'absolute';
+  el.style.left = '0';
+  el.style.top = '0';
+  el.style.margin = '0';
 
   try {
     const imgData = await toJpeg(el, { 
@@ -41,6 +50,10 @@ export async function generateExportData(
     }
     el.style.overflow = oldElOverflow;
     el.style.height = oldElHeight;
+    el.style.position = oldElPosition;
+    el.style.left = oldElLeft;
+    el.style.top = oldElTop;
+    el.style.margin = oldElMargin;
     
     if (type === 'image') {
       return { url: imgData };
@@ -66,6 +79,10 @@ export async function generateExportData(
     }
     el.style.overflow = oldElOverflow;
     el.style.height = oldElHeight;
+    el.style.position = oldElPosition;
+    el.style.left = oldElLeft;
+    el.style.top = oldElTop;
+    el.style.margin = oldElMargin;
     throw err;
   }
 }

@@ -125,7 +125,6 @@ export const onRequest = async (context: any) => {
 
     if (request.method === "POST" && path === "fortune/generate") {
       const body: any = await request.json();
-
       const modelProvider =
         ((await getSetting("model_provider")) as string) || "gemini";
 
@@ -180,7 +179,7 @@ export const onRequest = async (context: any) => {
             const reader = res.body.getReader();
             const decoder = new TextDecoder("utf-8");
             let buffer = "";
-
+            
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
@@ -203,7 +202,7 @@ export const onRequest = async (context: any) => {
                 }
               }
             }
-
+            
             // Write any remaining buffer if it looks like data
             const finalLine = buffer.trim();
             if (finalLine.startsWith("data:")) {
@@ -304,6 +303,17 @@ export const onRequest = async (context: any) => {
           },
         });
       }
+    }
+
+    if (request.method === "GET" && path === "model-info") {
+      const providerName = ((await getSetting("model_provider")) as string) || "gemini";
+      let modelId = "";
+      if (providerName === "aliyun") {
+         modelId = ((await getSetting("aliyun_model_id")) as string) || "qwen-plus";
+      } else {
+         modelId = ((await getSetting("gemini_model_id")) as string) || "gemini-2.0-flash";
+      }
+      return jsonResponse({ providerName, modelId });
     }
 
     if (request.method === "POST" && path === "fortune/save") {

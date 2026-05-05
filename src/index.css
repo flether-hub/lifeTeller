@@ -73,10 +73,12 @@ body {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
     margin: 0;
     padding: 0;
     background: white !important;
+    transform: none !important;
   }
   
   /* Reset container fixed / overflows for multi-page printing */

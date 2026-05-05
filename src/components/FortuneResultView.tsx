@@ -290,17 +290,16 @@ export function FortuneResultView(props: {
 
   return (
     <div 
-      className="w-full bg-slate-100/30 flex justify-center overflow-hidden py-4 md:py-10 px-0 print:p-0 print:bg-white"
+      className="w-full bg-slate-100/30 flex justify-center overflow-hidden py-4 md:py-10 px-0 print:block print:p-0 print:m-0 print:w-[794px] print:bg-white"
       style={{ height: scale !== 1 ? `${contentHeight * scale}px` : "auto" }}
     >
       <div
         ref={containerRef}
-        className="shrink-0 origin-top transition-all duration-300 bg-white shadow-xl print:shadow-none"
+        className="shrink-0 origin-top transition-all duration-300 bg-white shadow-xl print:shadow-none print:m-0 print:transform-none"
         style={{
           width: "794px", 
           transform: scale !== 1 ? `scale(${scale})` : "none",
           height: "fit-content",
-          marginInline: "auto",
         }}
         id="fortune-result-content"
       >
@@ -345,7 +344,7 @@ function FortuneResultViewInner({
   };
 
   return (
-    <div className="w-full bg-white font-sans text-slate-800 px-4 sm:px-6 md:px-12 py-8 md:py-16 relative overflow-hidden">
+    <div className="w-full sm:w-[794px] print:w-full bg-white font-sans text-slate-800 relative overflow-hidden px-12 py-16">
       {/* Decorative Background */}
       <svg className="absolute inset-0 w-full h-full -z-10 opacity-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -462,7 +461,7 @@ function FortuneResultViewInner({
         <p className="text-base font-sans font-bold text-slate-600 mb-8 max-w-lg leading-relaxed text-center px-4">
           "{result.iChingQuote || "天数难测，唯德报之"}"
         </p>
-        <div className="flex flex-col items-center gap-1 opacity-20 hover:opacity-40 transition-opacity">
+        <div className="flex flex-col items-center gap-1 opacity-20 hover:opacity-40 transition-opacity pb-12">
           <div className="flex items-center gap-2">
             <Compass size={18} />
             <span className="text-[10px] tracking-[0.5em] uppercase font-serif">life.fanso.site</span>
