@@ -52,7 +52,18 @@ export const onRequest = async (context: any) => {
   const getClientIp = () =>
     request.headers.get("cf-connecting-ip") || "127.0.0.1";
 
+  async function initDatabase() {
+    await env.DB.batch([
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`),
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS readings (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT, ip_location TEXT, lat REAL, lon REAL, name TEXT, gender TEXT DEFAULT '未知', calendar_type TEXT, birth_date TEXT, birth_time TEXT, province TEXT, result_json TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`),
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT, user_identifier TEXT, location TEXT, content TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, is_deleted INTEGER DEFAULT 0);`),
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS banned_ips (ip TEXT PRIMARY KEY, reason TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`),
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS quotas (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT, user_identifier TEXT, usage_count INTEGER DEFAULT 0, comment_count INTEGER DEFAULT 0, quota_date DATE DEFAULT (date('now')), UNIQUE(ip, user_identifier, quota_date));`)
+    ]);
+  }
+
   try {
+    await initDatabase();
     const getSetting = async (key: string) => {
       const res = await env.DB.prepare(
         "SELECT value FROM settings WHERE key = ?",
