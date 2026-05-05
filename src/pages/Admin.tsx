@@ -700,7 +700,7 @@ export default function Admin() {
                     </thead>
                     <tbody className="divide-y divide-blue-50">
                       {comments.map((c) => (
-                        <tr key={c.id} className={`hover:bg-slate-50 transition ${c.is_deleted ? 'opacity-40 grayscale' : ''}`}>
+                        <tr key={c.id} className="hover:bg-slate-50 transition">
                           <td className="p-4">
                             <input type="checkbox" checked={selectedComments.has(c.id)} onChange={() => toggleCommentSelection(c.id)} />
                           </td>
@@ -723,15 +723,13 @@ export default function Admin() {
                               >
                                 <ShieldX size={18} />
                               </button>
-                              {!c.is_deleted && (
-                                <button 
-                                  onClick={() => handleDeleteComment(c.id)}
-                                  className="text-rose-500 hover:text-rose-700 transition" 
-                                  title="删除评论"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              )}
+                              <button 
+                                onClick={() => handleDeleteComment(c.id)}
+                                className="text-rose-500 hover:text-rose-700 transition" 
+                                title="删除评论"
+                              >
+                                <Trash2 size={18} />
+                              </button>
                             </div>
                           </td>
                         </tr>

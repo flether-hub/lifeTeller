@@ -274,7 +274,7 @@ try {
 
   app.get('/api/admin/comments', authenticateAdmin, (req, res) => {
     try {
-      const comments = db.prepare('SELECT * FROM comments ORDER BY created_at DESC').all();
+      const comments = db.prepare('SELECT * FROM comments WHERE is_deleted = 0 ORDER BY created_at DESC').all();
       res.json(comments);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
