@@ -175,7 +175,7 @@ export const onRequest = async (context: any) => {
                 },
                 body: JSON.stringify({
                   model: aliyunModelId,
-                  messages: [{ role: "user", content: body.prompt }],
+                  messages: [{ role: "user", content: `Today is ${new Date().toISOString().split("T")[0]}. ${body.prompt}` }],
                   stream: true,
                 }),
               },
@@ -250,9 +250,10 @@ export const onRequest = async (context: any) => {
         let stream;
         try {
           const geminiModelId = ((await getSetting("gemini_model_id")) as string) || "gemini-2.0-flash";
+          const today = new Date().toISOString().split("T")[0];
           stream = await ai.models.generateContentStream({
             model: geminiModelId,
-            contents: body.prompt,
+            contents: `Today is ${today}. ${body.prompt}`,
           });
         } catch (err: any) {
           console.error("AI API Error:", err);

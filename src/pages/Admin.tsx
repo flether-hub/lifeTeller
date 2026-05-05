@@ -55,12 +55,14 @@ export default function Admin() {
 
   // Data states
   const [readings, setReadings] = useState<any[]>([]);
+  const [selectedReadings, setSelectedReadings] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
 
   const [mapData, setMapData] = useState<any>({ points: [], provinces: [] });
   const [comments, setComments] = useState<any[]>([]);
+  const [selectedComments, setSelectedComments] = useState<Set<number>>(new Set());
   const [bannedIps, setBannedIps] = useState<any[]>([]);
   const [modSubTab, setModSubTab] = useState<"comments" | "bans">("comments");
   const [settings, setSettings] = useState<any>({
@@ -190,6 +192,11 @@ export default function Admin() {
     try {
       await fetchWithToken(`/api/admin/readings/${id}`, { method: "DELETE" });
       setReadings(readings.filter((r) => r.id !== id));
+      setSelectedReadings(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       setDeleteConfirmId(null);
     } catch (e) {
       console.error(e);
@@ -198,10 +205,73 @@ export default function Admin() {
     }
   };
 
+  const handleBatchDeleteReadings = async () => {
+    if (selectedReadings.size === 0) return;
+    if (!confirm(`确定要删除选中的 ${selectedReadings.size} 条查询记录吗？`)) return;
+    
+    await Promise.all(
+        Array.from(selectedReadings).map(id => fetchWithToken(`/api/admin/readings/${id}`, { method: "DELETE" }))
+    );
+    loadData();
+    setSelectedReadings(new Set());
+  };
+
+  const toggleReadingSelection = (id: number) => {
+      setSelectedReadings(prev => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+      });
+  };
+
+  const toggleSelectAllReadings = () => {
+      if (selectedReadings.size === readings.length && readings.length > 0) {
+          setSelectedReadings(new Set());
+      } else {
+          setSelectedReadings(new Set(readings.map(r => r.id)));
+      }
+  };
+
   const handleDeleteComment = async (id: number) => {
     if (!confirm("确定要删除这条评论吗？")) return;
     await fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" });
     setComments(comments.filter(c => c.id !== id));
+    setSelectedComments(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const handleBatchDeleteComments = async () => {
+    if (selectedComments.size === 0) return;
+    if (!confirm(`确定要删除选中的 ${selectedComments.size} 条评论吗？`)) return;
+    
+    // Perform individual deletes as backend doesn't support batch, 
+    // but we can optimize or just map promises
+    await Promise.all(
+        Array.from(selectedComments).map(id => fetchWithToken(`/api/admin/comments/${id}`, { method: "DELETE" }))
+    );
+    loadData();
+    setSelectedComments(new Set());
+  };
+
+  const toggleCommentSelection = (id: number) => {
+      setSelectedComments(prev => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+      });
+  };
+
+  const toggleSelectAll = () => {
+      if (selectedComments.size === comments.length) {
+          setSelectedComments(new Set());
+      } else {
+          setSelectedComments(new Set(comments.map(c => c.id)));
+      }
   };
 
   const handleBanIp = async (ip: string) => {
@@ -309,13 +379,30 @@ export default function Admin() {
         <div className="flex-1 overflow-auto bg-white/95 border border-blue-100 shadow-xl rounded-2xl p-4 md:p-8 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
           {activeTab === "readings" && (
             <div>
-              <h2 className="text-2xl font-serif text-blue-800 font-bold mb-6">
-                查询记录
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-serif text-blue-800 font-bold">
+                  查询记录
+                </h2>
+                {selectedReadings.size > 0 && (
+                  <button 
+                    onClick={handleBatchDeleteReadings}
+                    className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition shadow-sm active:scale-95"
+                  >
+                    <Trash2 size={16} /> 批量删除 ({selectedReadings.size})
+                  </button>
+                )}
+              </div>
               <div className="bg-white rounded-xl overflow-x-auto border border-blue-100 shadow-sm">
                 <table className="w-full text-left min-w-[600px]">
                   <thead className="bg-slate-50 border-b border-blue-100">
                     <tr>
+                      <th className="p-4 font-medium text-slate-600">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedReadings.size === readings.length && readings.length > 0} 
+                          onChange={toggleSelectAllReadings} 
+                        />
+                      </th>
                       <th className="p-4 font-medium text-slate-600 whitespace-nowrap">
                         序号
                       </th>
@@ -341,6 +428,13 @@ export default function Admin() {
                       const displayId = total - ((page - 1) * limit + index);
                       return (
                         <tr key={r.id} className="hover:bg-slate-50 transition">
+                          <td className="p-4">
+                            <input 
+                              type="checkbox" 
+                              checked={selectedReadings.has(r.id)} 
+                              onChange={() => toggleReadingSelection(r.id)} 
+                            />
+                          </td>
                           <td className="p-4 text-slate-500 text-sm whitespace-nowrap">
                             #{displayId}
                           </td>
@@ -516,9 +610,23 @@ export default function Admin() {
 
               {modSubTab === "comments" ? (
                 <div className="bg-white rounded-xl overflow-x-auto border border-blue-100 shadow-sm">
+                  <div className="p-4 border-b border-blue-100 flex items-center justify-between">
+                     <span className="text-sm text-slate-500">已选中 {selectedComments.size} 条评论</span>
+                     {selectedComments.size > 0 && (
+                        <button 
+                            onClick={handleBatchDeleteComments}
+                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition"
+                        >
+                            <Trash2 size={16} /> 批量删除
+                        </button>
+                     )}
+                  </div>
                   <table className="w-full text-left min-w-[600px]">
                     <thead className="bg-slate-50 border-b border-blue-100">
                       <tr>
+                        <th className="p-4 font-medium text-slate-600">
+                           <input type="checkbox" checked={selectedComments.size === comments.length && comments.length > 0} onChange={toggleSelectAll} />
+                        </th>
                         <th className="p-4 font-medium text-slate-600">IP / 位置</th>
                         <th className="p-4 font-medium text-slate-600">内容</th>
                         <th className="p-4 font-medium text-slate-600">时间</th>
@@ -528,6 +636,9 @@ export default function Admin() {
                     <tbody className="divide-y divide-blue-50">
                       {comments.map((c) => (
                         <tr key={c.id} className={`hover:bg-slate-50 transition ${c.is_deleted ? 'opacity-40 grayscale' : ''}`}>
+                          <td className="p-4">
+                            <input type="checkbox" checked={selectedComments.has(c.id)} onChange={() => toggleCommentSelection(c.id)} />
+                          </td>
                           <td className="p-4">
                             <div className="text-sm font-medium text-slate-800">{c.ip}</div>
                             <div className="text-[10px] text-slate-400">{c.location}</div>

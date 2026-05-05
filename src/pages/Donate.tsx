@@ -75,12 +75,12 @@ export default function Donate() {
       <StarryBackground />
       <Header config={config} />
       
-      <main className="flex-1 flex items-start justify-center px-6 py-4 pt-24 pb-12 z-10 w-full relative max-w-6xl mx-auto">
+      <main className="flex-1 flex items-start justify-center px-2 sm:px-6 py-4 pt-24 pb-12 z-10 w-full relative max-w-6xl mx-auto">
         {/* Unified Container */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] w-full border border-blue-100 shadow-2xl relative z-10 flex flex-col lg:flex-row overflow-hidden min-h-[650px] group"
+          className="bg-white/90 backdrop-blur-xl rounded-[1.5rem] sm:rounded-[2.5rem] w-full border border-blue-100 shadow-2xl relative z-10 flex flex-col lg:flex-row overflow-hidden min-h-[650px] group"
         >
           {/* Close Button - shared for the whole container now */}
           <button 
@@ -92,7 +92,7 @@ export default function Donate() {
           </button>
 
           {/* Left Side: Support Section (40%) */}
-          <div className="lg:w-[400px] p-8 sm:p-10 border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col items-center text-center shrink-0">
+          <div className="lg:w-[400px] p-6 sm:p-10 border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col items-center text-center shrink-0">
             <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
               <Heart size={32} className="text-rose-500 animate-pulse" />
             </div>
@@ -147,16 +147,18 @@ export default function Donate() {
           </div>
 
           {/* Right Side: Comment Section (60%) */}
-          <div className="flex-1 p-8 sm:p-10 flex flex-col min-h-[500px] md:min-h-0 bg-white/30 backdrop-blur-sm">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-2.5 bg-blue-100 rounded-xl text-blue-600">
-                <MessageSquare size={22} />
+          <div className="flex-1 p-5 sm:p-10 flex flex-col min-h-[500px] md:min-h-0 bg-white/30 backdrop-blur-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 sm:mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-100 rounded-xl text-blue-600 shrink-0">
+                  <MessageSquare size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-800">用户评论反馈</h3>
+                  <p className="text-[10px] text-slate-400 font-sans tracking-wider mt-1">每一条建议我们都会认真倾听</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-serif font-bold text-slate-800">用户评论反馈</h3>
-                <p className="text-[10px] text-slate-400 font-sans tracking-wider mt-1">每一条建议我们都会认真倾听</p>
-              </div>
-              <span className="text-[10px] font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md ml-auto">每人每天限2条</span>
+              <span className="text-[10px] font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md sm:ml-auto self-start sm:self-center">每人每天限2条</span>
             </div>
 
             {/* Comment List */}
@@ -175,18 +177,18 @@ export default function Donate() {
                       exit={{ opacity: 0, scale: 0.95 }}
                       className="p-5 bg-white/60 hover:bg-white rounded-2xl border border-slate-100 transition-all shadow-sm hover:shadow-md"
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500">
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 rounded-full">
-                            <User size={10} className="text-slate-400" />
-                            <span>{comment.ip}</span>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-slate-500 overflow-hidden">
+                          <div className="flex items-center gap-1 px-2 py-0.5 bg-slate-50 rounded-full shrink-0 max-w-[150px] sm:max-w-none">
+                            <User size={10} className="text-slate-400 shrink-0" />
+                            <span className="truncate">{comment.ip}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 rounded-full text-blue-600">
-                            <MapPin size={10} className="text-blue-400" />
-                            <span>{comment.location}</span>
+                          <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 rounded-full text-blue-600 shrink-0 max-w-[120px] sm:max-w-none">
+                            <MapPin size={10} className="text-blue-400 shrink-0" />
+                            <span className="truncate">{comment.location}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 tabular-nums">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 tabular-nums shrink-0">
                           <Clock size={10} />
                           {new Date(comment.created_at).toLocaleDateString()}
                         </div>

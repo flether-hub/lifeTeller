@@ -304,7 +304,7 @@ try {
     }
   });
 
-  app.post('/api/fortune/generate', async (req, res) => {
+          app.post('/api/fortune/generate', async (req, res) => {
     // Set headers for streaming
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
@@ -314,6 +314,8 @@ try {
 
     try {
       const { prompt } = req.body;
+      const today = new Date().toISOString().split('T')[0];
+      const fullPrompt = `Today is ${today}. ${prompt}`;
 
       const modelProviderRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('model_provider') as { value: string } | undefined;
       const modelProvider = modelProviderRow?.value || 'gemini';
@@ -339,7 +341,7 @@ try {
           },
           body: JSON.stringify({
             model: aliyunModelId,
-            messages: [{ role: "user", content: prompt }],
+            messages: [{ role: "user", content: fullPrompt }],
             stream: true,
           }),
         });
@@ -422,7 +424,7 @@ try {
         try {
           stream = await ai.models.generateContentStream({
             model: geminiModelId,
-            contents: prompt
+            contents: fullPrompt
           });
         } catch (err: any) {
           console.error("AI API Error:", err);
