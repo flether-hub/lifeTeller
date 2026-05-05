@@ -36,6 +36,8 @@ interface ReadingContextType {
   setError: (v: string | null) => void;
   debugLogs: string[];
   setDebugLogs: (v: string[] | ((prev: string[]) => string[])) => void;
+  modelInfo: { providerName: string; modelId: string } | null;
+  fetchModelInfo: () => Promise<void>;
 }
 
 const ReadingContext = createContext<ReadingContextType | undefined>(undefined);
@@ -48,6 +50,7 @@ const maskError = (e: string | null) =>
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [isReading, setIsReading] = useState(false);
   const [result, setResult] = useState<FortuneResult | null>(null);
+  const [modelInfo, setModelInfo] = useState<{ providerName: string; modelId: string } | null>(null);
   const [error, setErrorState] = useState<string | null>(() => {
     return localStorage.getItem("kv_error") || null;
   });
@@ -59,6 +62,24 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
       return [];
     }
   });
+
+  const fetchModelInfo = async () => {
+    try {
+      const res = await fetch("/api/model-info");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.providerName && data.modelId) {
+          setModelInfo(data);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch model info:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchModelInfo();
+  }, []);
 
   const setIsReadingWrapped = (v: boolean) => {
     setIsReading(v);
@@ -94,6 +115,8 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
         setError,
         debugLogs,
         setDebugLogs,
+        modelInfo,
+        fetchModelInfo,
       }}
     >
       {children}

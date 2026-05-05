@@ -994,19 +994,7 @@ export default function Home() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="w-full mt-8 overflow-hidden mb-8"
                 >
-                  <FortuneResultView
-                    result={result}
-                    userInfo={{
-                      name,
-                      gender,
-                      date,
-                      time,
-                      province,
-                      calendarType,
-                    }}
-                  />
-
-                  <div className="p-8 pb-12 pt-0 space-y-8">
+                  <div className="p-8 pb-4 pt-8 space-y-8">
                     <div className="pt-2 flex flex-col sm:flex-row justify-center items-center gap-4">
                       <button
                         onClick={async () => {
@@ -1060,6 +1048,18 @@ export default function Home() {
                       </button>
                     </div>
                   </div>
+
+                  <FortuneResultView
+                    result={result}
+                    userInfo={{
+                      name,
+                      gender,
+                      date,
+                      time,
+                      province,
+                      calendarType,
+                    }}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>

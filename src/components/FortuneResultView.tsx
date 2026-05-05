@@ -255,7 +255,7 @@ export function FortuneResultView(props: {
     const handleResize = () => {
       const baseWidth = 794; // Standard A4 width at 96 DPI
       const windowWidth = window.innerWidth;
-      const padding = windowWidth < 640 ? 32 : 48; // Responsive padding
+      const padding = windowWidth < 640 ? 48 : 64; // Increased padding for mobile
       
       if (windowWidth < baseWidth + padding) {
         const s = (windowWidth - padding) / baseWidth;
@@ -290,8 +290,8 @@ export function FortuneResultView(props: {
 
   return (
     <div 
-      className="w-full bg-slate-100/30 flex justify-center overflow-x-hidden min-h-screen py-4 md:py-10 px-4 md:px-0 print:p-0 print:bg-white"
-      style={{ height: scale !== 1 ? `${contentHeight * scale + 60}px` : "auto" }}
+      className="w-full bg-slate-100/30 flex justify-center overflow-hidden py-4 md:py-10 px-0 print:p-0 print:bg-white"
+      style={{ height: scale !== 1 ? `${contentHeight * scale}px` : "auto" }}
     >
       <div
         ref={containerRef}
@@ -300,7 +300,7 @@ export function FortuneResultView(props: {
           width: "794px", 
           transform: scale !== 1 ? `scale(${scale})` : "none",
           height: "fit-content",
-          marginInline: "auto"
+          marginInline: "auto",
         }}
         id="fortune-result-content"
       >
@@ -345,7 +345,7 @@ function FortuneResultViewInner({
   };
 
   return (
-    <div className="w-full bg-white font-sans text-slate-800 px-6 sm:px-12 py-16 relative overflow-hidden">
+    <div className="w-full bg-white font-sans text-slate-800 px-4 sm:px-6 md:px-12 py-8 md:py-16 relative overflow-hidden">
       {/* Decorative Background */}
       <svg className="absolute inset-0 w-full h-full -z-10 opacity-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
         <defs>

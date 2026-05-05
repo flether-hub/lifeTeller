@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { AnimatedLogo } from './AnimatedLogo';
+import { useReading } from '../context/ReadingContext';
 
 export function Footer() {
   const [quote, setQuote] = useState<string | null>(null);
-  const [modelInfo, setModelInfo] = useState<{providerName: string, modelId: string} | null>(null);
+  const { modelInfo } = useReading();
 
   useEffect(() => {
     // Fetch quote from localStorage
@@ -16,36 +17,6 @@ export function Footer() {
         }
       }
     } catch(e) {}
-
-    // Fetch model info from API
-    const fetchModelInfo = (retries = 2) => {
-      fetch('/api/model-info')
-        .then(res => {
-          if (res.status === 429) {
-            // Silently ignore rate limits for non-critical info
-            return null;
-          }
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          if (data && data.providerName && data.modelId) {
-            setModelInfo(data);
-          }
-        })
-        .catch(err => {
-          if (retries > 0 && !err.message.includes('429')) {
-            setTimeout(() => fetchModelInfo(retries - 1), 2000);
-          } else {
-            // Only log if it's not a rate limit
-            if (!err.message.includes('429')) {
-              console.error('Failed to fetch model info:', err);
-            }
-          }
-        });
-    };
-
-    fetchModelInfo();
   }, []);
 
   return (
@@ -64,7 +35,7 @@ export function Footer() {
         {modelInfo ? (
           <span className="ml-1 opacity-80">Powered by {modelInfo.modelId}</span>
         ) : (
-          <span className="ml-1 opacity-80">Powered by Gemini</span>
+          <span className="ml-1 opacity-80">Technology by Gemini</span>
         )}
       </p>
     </footer>
