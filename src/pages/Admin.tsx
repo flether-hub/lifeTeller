@@ -23,6 +23,8 @@ import {
   Eye,
   Trash2,
   X,
+  Sparkles,
+  Cpu,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
@@ -40,6 +42,14 @@ export default function Admin() {
     "readings",
   );
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setToken(localStorage.getItem('admin_token') || "");
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // Data states
   const [readings, setReadings] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -51,6 +61,7 @@ export default function Admin() {
     total_daily_limit: "",
     ip_daily_limit: "",
     gemini_api_key: "",
+    gemini_model_id: "gemini-2.0-flash",
     aliyun_api_key: "",
     model_provider: "gemini",
     aliyun_model_id: "qwen-plus",
@@ -73,7 +84,8 @@ export default function Admin() {
     if (res.status === 401) {
       setToken("");
       localStorage.removeItem("admin_token");
-      throw new Error("Unauthorized");
+      window.dispatchEvent(new Event('storage'));
+      return res; // Returning instead of throwing prevents Vite unhandled rejection error overlay
     }
     return res;
   };
@@ -136,6 +148,7 @@ export default function Admin() {
     if (res.ok) {
       setToken(data.token);
       localStorage.setItem("admin_token", data.token);
+      window.dispatchEvent(new Event('storage'));
     } else {
       setError(data.error);
     }
@@ -246,29 +259,7 @@ export default function Admin() {
               <Settings size={20} className="shrink-0" />{" "}
               <span className="hidden md:inline">系统设置</span>
             </button>
-            <button
-              onClick={() => {
-                setToken("");
-                localStorage.removeItem("admin_token");
-                navigate("/");
-              }}
-              className="md:hidden shrink-0 flex items-center justify-center gap-2 text-rose-500 hover:text-rose-600 transition bg-rose-50 hover:bg-rose-100 px-4 py-3 rounded-xl font-medium"
-            >
-              <LogOut size={18} />
-            </button>
           </nav>
-          <div className="hidden md:block p-4 border-t border-blue-50">
-            <button
-              onClick={() => {
-                setToken("");
-                localStorage.removeItem("admin_token");
-                navigate("/");
-              }}
-              className="flex items-center justify-center gap-2 text-slate-500 hover:text-rose-500 transition w-full bg-slate-50 hover:bg-rose-50 p-2 rounded-xl"
-            >
-              <LogOut size={18} /> 退出登录
-            </button>
-          </div>
         </div>
 
         {/* Main Content */}
@@ -465,111 +456,140 @@ export default function Admin() {
               </h2>
               <form
                 onSubmit={handleSaveSettings}
-                className="bg-white p-8 rounded-xl border border-blue-100 shadow-sm space-y-6"
+                className="bg-white p-6 rounded-xl border border-blue-100 shadow-sm space-y-5"
               >
-                <div>
-                  <label className="block text-sm text-slate-700 mb-2 font-medium">
-                    每日全站总额度 (防刷限制)
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.total_daily_limit}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        total_daily_limit: e.target.value,
-                      })
-                    }
-                    className="w-full bg-slate-50 border border-blue-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-700 mb-2 font-medium">
-                    单IP每日额度限制
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.ip_daily_limit}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        ip_daily_limit: e.target.value,
-                      })
-                    }
-                    className="w-full bg-slate-50 border border-blue-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-700 mb-2 font-medium">
-                    模型提供商
-                  </label>
-                  <select
-                    value={settings.model_provider || "gemini"}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        model_provider: e.target.value,
-                      })
-                    }
-                    className="w-full bg-slate-50 border border-blue-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-                  >
-                    <option value="gemini">Google Gemini</option>
-                    <option value="aliyun">阿里云百炼 (Qwen)</option>
-                  </select>
-                </div>
-
-                {settings.model_provider === "aliyun" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-slate-700 mb-2 font-medium">
-                      阿里云百炼 Model ID
+                    <label className="block text-sm text-slate-700 mb-1.5 font-medium">
+                      每日全站总额度 (防刷限制)
                     </label>
                     <input
-                      type="text"
-                      value={settings.aliyun_model_id || "qwen-plus"}
+                      type="number"
+                      value={settings.total_daily_limit}
                       onChange={(e) =>
                         setSettings({
                           ...settings,
-                          aliyun_model_id: e.target.value,
+                          total_daily_limit: e.target.value,
                         })
                       }
-                      placeholder="如 qwen-plus, qwen-max..."
-                      className="w-full bg-slate-50 border border-blue-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder-slate-400"
+                      className="w-full bg-slate-50 border border-blue-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
                     />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-sm text-slate-700 mb-1.5 font-medium">
+                      单IP每日额度限制
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.ip_daily_limit}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          ip_daily_limit: e.target.value,
+                        })
+                      }
+                      className="w-full bg-slate-50 border border-blue-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  {/* Gemini Configuration */}
+                  <div className={`p-4 rounded-2xl border ${settings.model_provider === "gemini" ? "bg-blue-50/50 border-blue-200 ring-2 ring-blue-500/10" : "bg-slate-50/30 border-slate-200"}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <Sparkles size={22} className="text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-800">Google Gemini</h3>
+                          <p className="text-xs text-slate-500">强大的多模态大模型</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSettings({ ...settings, model_provider: "gemini" })}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                          settings.model_provider === "gemini" 
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+                          : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {settings.model_provider === "gemini" ? "当前使用中" : "设为使用"}
+                      </button>
+                    </div>
 
-                <div>
-                  <label className="block text-sm text-slate-700 mb-2 font-medium">
-                    API Key (
-                    {settings.model_provider === "aliyun"
-                      ? "阿里云 API Key"
-                      : "自定义 Gemini API Key"}
-                    )
-                  </label>
-                  <input
-                    type="password"
-                    value={
-                      settings.model_provider === "aliyun"
-                        ? settings.aliyun_api_key || ""
-                        : settings.gemini_api_key || ""
-                    }
-                    onChange={(e) => {
-                      const keyName =
-                        settings.model_provider === "aliyun"
-                          ? "aliyun_api_key"
-                          : "gemini_api_key";
-                      setSettings({
-                        ...settings,
-                        [keyName]: e.target.value,
-                      });
-                    }}
-                    placeholder={
-                      settings.model_provider === "aliyun"
-                        ? "请输入阿里云 API Key"
-                        : "留空即使用环境变量..."
-                    }
-                    className="w-full bg-slate-50 border border-blue-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder-slate-400"
-                  />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1.5 ml-1">Gemini Model ID</label>
+                        <input
+                          type="text"
+                          value={settings.gemini_model_id || "gemini-2.0-flash"}
+                          onChange={(e) => setSettings({ ...settings, gemini_model_id: e.target.value })}
+                          placeholder="gemini-2.0-flash..."
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1.5 ml-1">API Key</label>
+                        <input
+                          type="password"
+                          value={settings.gemini_api_key || ""}
+                          onChange={(e) => setSettings({ ...settings, gemini_api_key: e.target.value })}
+                          placeholder="留空即使用环境变量..."
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Aliyun Configuration */}
+                  <div className={`p-4 rounded-2xl border ${settings.model_provider === "aliyun" ? "bg-orange-50/50 border-orange-200 ring-2 ring-orange-500/10" : "bg-slate-50/30 border-slate-200"}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                          <Cpu size={22} className="text-orange-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-800">阿里云百炼 (Qwen)</h3>
+                          <p className="text-xs text-slate-500">阿里通义千问大模型</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSettings({ ...settings, model_provider: "aliyun" })}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                          settings.model_provider === "aliyun" 
+                          ? "bg-orange-600 text-white shadow-md shadow-orange-200" 
+                          : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {settings.model_provider === "aliyun" ? "当前使用中" : "设为使用"}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1.5 ml-1">Qwen Model ID</label>
+                        <input
+                          type="text"
+                          value={settings.aliyun_model_id || "qwen-plus"}
+                          onChange={(e) => setSettings({ ...settings, aliyun_model_id: e.target.value })}
+                          placeholder="qwen-plus..."
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1.5 ml-1">API Key</label>
+                        <input
+                          type="password"
+                          value={settings.aliyun_api_key || ""}
+                          onChange={(e) => setSettings({ ...settings, aliyun_api_key: e.target.value })}
+                          placeholder="请输入阿里云 API Key"
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 {msg && (
                   <div className="bg-green-50 text-green-700 p-3 rounded-xl border border-green-200 text-sm">
@@ -589,11 +609,11 @@ export default function Admin() {
       {selectedReading && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50 print-hide">
-              <h3 className="font-serif text-xl font-bold text-slate-800">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 gap-4 border-b border-slate-100 bg-slate-50 print-hide relative">
+              <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-800 break-all pr-10 sm:pr-0">
                 算命结果详情 - {selectedReading.name}
               </h3>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
                 <button
                   onClick={async () => {
                     setExportType("pdf");
@@ -612,7 +632,7 @@ export default function Admin() {
                       alert("导出失败，请重试");
                     }
                   }}
-                  className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium border border-indigo-200 shadow-sm"
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-xs sm:text-sm font-medium border border-indigo-200 shadow-sm whitespace-nowrap"
                 >
                   导出PDF
                 </button>
@@ -634,13 +654,13 @@ export default function Admin() {
                       alert("导出失败，请重试");
                     }
                   }}
-                  className="px-4 py-2 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium border border-slate-200 shadow-sm"
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-xs sm:text-sm font-medium border border-slate-200 shadow-sm whitespace-nowrap"
                 >
                   导出长图
                 </button>
                 <button
                   onClick={() => setSelectedReading(null)}
-                  className="text-slate-400 hover:text-slate-600 transition ml-2"
+                  className="absolute right-4 top-4 sm:static p-2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <X size={24} />
                 </button>

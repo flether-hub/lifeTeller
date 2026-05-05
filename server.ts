@@ -12,16 +12,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  const app = express();
-  const PORT = 3000;
+const app = express();
+const PORT = 3000;
 
-  app.use(cors());
-  app.use(express.json());
+console.log("Initializing server setup...");
 
-  // Initialize Database
-  const db = new Database('lifeteller.db');
-  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+app.use(cors());
+app.use(express.json());
+
+// Initialize Database
+let db: any;
+try {
+  const dbPath = path.join(process.cwd(), 'lifeteller.db');
+  console.log(`Using database at: ${dbPath}`);
+  db = new Database(dbPath);
+  const schemaPath = path.join(process.cwd(), 'schema.sql');
+  console.log(`Reading schema from: ${schemaPath}`);
+  const schema = fs.readFileSync(schemaPath, 'utf8');
   db.exec(schema);
+  console.log("Database initialized successfully.");
+} catch (err) {
+  console.error("CRITICAL: Database initialization failed:", err);
+  // Still try to start the server but it will fail on routes
+}
 
   const getSecret = () => new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret');
 
@@ -29,7 +42,7 @@ async function startServer() {
   const authenticateAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: '未授权或登录已过期' });
     }
     const token = authHeader.split(' ')[1];
     try {
@@ -37,7 +50,7 @@ async function startServer() {
       (req as any).admin = payload;
       next();
     } catch (err) {
-      res.status(401).json({ error: 'Invalid token' });
+      res.status(401).json({ error: '令牌无效或已过期' });
     }
   };
 
@@ -58,6 +71,26 @@ async function startServer() {
   };
 
   // API Routes
+  app.get('/api/model-info', (req, res) => {
+    try {
+      const provider = (db.prepare('SELECT value FROM settings WHERE key = ?').get('model_provider') as any)?.value || 'gemini';
+      let modelId = '';
+      let providerName = '';
+
+      if (provider === 'aliyun') {
+        modelId = (db.prepare('SELECT value FROM settings WHERE key = ?').get('aliyun_model_id') as any)?.value || 'qwen-plus';
+        providerName = '阿里云百炼 (Qwen)';
+      } else {
+        modelId = (db.prepare('SELECT value FROM settings WHERE key = ?').get('gemini_model_id') as any)?.value || 'gemini-2.0-flash';
+        providerName = 'Google Gemini';
+      }
+
+      res.json({ provider, modelId, providerName });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to fetch model info' });
+    }
+  });
+
   app.get('/api/config', (req, res) => {
     const totalDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('total_daily_limit') as any)?.value || '100';
     const ipDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('ip_daily_limit') as any)?.value || '3';
@@ -200,10 +233,34 @@ async function startServer() {
         }
 
         const ai = new GoogleGenAI({ apiKey });
-        const stream = await ai.models.generateContentStream({
-          model: 'gemini-2.0-flash',
-          contents: prompt
-        });
+        const geminiModelRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('gemini_model_id') as { value: string } | undefined;
+        const geminiModelId = geminiModelRow?.value || 'gemini-2.0-flash';
+        
+        let stream;
+        try {
+          stream = await ai.models.generateContentStream({
+            model: geminiModelId,
+            contents: prompt
+          });
+        } catch (err: any) {
+          console.error("AI API Error:", err);
+          let errMsg = err?.message || String(err);
+          try {
+            if (errMsg.startsWith('{')) {
+              const parsed = JSON.parse(errMsg);
+              if (parsed.error && parsed.error.message) {
+                errMsg = parsed.error.message;
+              }
+            } else if (errMsg.startsWith('ApiError: {')) {
+              const parsed = JSON.parse(errMsg.substring(10));
+              if (parsed.error && parsed.error.message) {
+                errMsg = parsed.error.message;
+              }
+            }
+          } catch(e) {}
+          res.write(`\n--STREAM-ERROR--\n${errMsg}`);
+          return res.end();
+        }
 
         for await (const chunk of stream) {
           if (chunk.text) {
@@ -218,7 +275,21 @@ async function startServer() {
 
     } catch (err: any) {
       console.error('API Error:', err);
-      res.write(`\\n--STREAM-ERROR--\\n${err.message || 'AI 生成失败'}`);
+      let errMsg = err?.message || String(err);
+      try {
+        if (errMsg.startsWith('{')) {
+          const parsed = JSON.parse(errMsg);
+          if (parsed.error && parsed.error.message) {
+            errMsg = parsed.error.message;
+          }
+        } else if (errMsg.startsWith('ApiError: {')) {
+          const parsed = JSON.parse(errMsg.substring(10));
+          if (parsed.error && parsed.error.message) {
+            errMsg = parsed.error.message;
+          }
+        }
+      } catch(e) {}
+      res.write(`\n--STREAM-ERROR--\n${errMsg}`);
       res.end();
     }
   });
@@ -317,6 +388,7 @@ async function startServer() {
   // Vite middleware for development
 
   if (process.env.NODE_ENV !== "production") {
+    console.log("Starting Vite in middleware mode...");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -331,10 +403,10 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }
 
 startServer().catch(err => {
-  console.error("Failed to start server:", err);
+  console.error("CRITICAL: Failed to start server:", err);
 });

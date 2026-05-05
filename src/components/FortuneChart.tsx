@@ -64,7 +64,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
   const xTicks = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
   return (
-    <div className="w-full h-[400px] sm:h-[450px] mt-8 bg-white p-4 sm:p-6 rounded-3xl border border-slate-100 flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.02)] pb-4 sm:pb-8 relative overflow-hidden">
+    <div className="w-full h-[450px] mt-8 bg-white p-6 rounded-3xl border border-slate-100 flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.02)] pb-8 relative overflow-hidden">
       {/* Background AI Motif */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] select-none flex items-center justify-center overflow-hidden">
         <svg width="100%" height="100%" viewBox="0 0 800 400" className="scale-150">
@@ -77,17 +77,14 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
         </svg>
       </div>
 
-      <div className="flex justify-between items-center mb-4 sm:mb-6 relative z-10 shrink-0">
+      <div className="flex justify-between items-center mb-6 relative z-10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-          <h3 className="text-slate-800 font-serif text-lg sm:text-xl font-bold m-0 tracking-widest">一生天命走势图</h3>
-        </div>
-        <div className="px-2 sm:px-3 py-1 bg-indigo-50 rounded-full text-[9px] sm:text-[10px] text-indigo-600 font-bold uppercase tracking-widest border border-indigo-100 flex-none ml-2">
-          AI T-REND
+          <h3 className="text-slate-800 font-serif text-xl font-bold m-0 tracking-widest">一生天命走势图</h3>
         </div>
       </div>
       
-      <p className="text-xs text-slate-400 mb-4 sm:mb-8 text-left sm:text-center relative z-10 font-light shrink-0">
+      <p className="text-[15px] text-slate-400 mb-8 text-center relative z-10 font-light shrink-0">
         <span className="inline-block w-2 h-2 rounded-full bg-indigo-400/20 mr-1 animate-pulse" />
         交互式解析：沿曲线滑动查看各流年维度的命理详细评分
       </p>
@@ -150,10 +147,10 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
             />
             <Legend 
               verticalAlign="bottom" 
-              height={36} 
+              height={40} 
               iconType="circle"
-              iconSize={8}
-              wrapperStyle={{ paddingTop: '30px', fontSize: '12px', color: '#64748b' }}
+              iconSize={10}
+              wrapperStyle={{ paddingTop: '30px', fontSize: '15px', color: '#64748b' }}
             />
             <Area 
               type="monotone" 

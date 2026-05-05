@@ -3,8 +3,10 @@ import { AnimatedLogo } from './AnimatedLogo';
 
 export function Footer() {
   const [quote, setQuote] = useState<string | null>(null);
+  const [modelInfo, setModelInfo] = useState<{providerName: string, modelId: string} | null>(null);
 
   useEffect(() => {
+    // Fetch quote from localStorage
     try {
       const item = localStorage.getItem('last_reading');
       if (item) {
@@ -14,6 +16,16 @@ export function Footer() {
         }
       }
     } catch(e) {}
+
+    // Fetch model info from API
+    fetch('/api/model-info')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.providerName && data.modelId) {
+          setModelInfo(data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch model info:', err));
   }, []);
 
   return (
@@ -27,7 +39,14 @@ export function Footer() {
         )}
       </div>
       <p className="text-sm px-4">免责声明: 本程序基于传统易学文化，预测结果仅供娱乐参考，切勿过度迷信。命运掌握在自己手中。</p>
-      <p className="mt-3 text-sm">© {new Date().getFullYear()} lifeTeller. by AI.</p>
+      <p className="mt-3 text-sm">
+        © {new Date().getFullYear()} lifeTeller. 
+        {modelInfo ? (
+          <span className="ml-1 opacity-80">Powered by {modelInfo.providerName} ({modelInfo.modelId})</span>
+        ) : (
+          <span className="ml-1 opacity-80">by AI.</span>
+        )}
+      </p>
     </footer>
   );
 }

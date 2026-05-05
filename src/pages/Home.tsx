@@ -190,7 +190,7 @@ export default function Home() {
     }
   };
 
-  const [config, setConfig] = useState({ totalLeft: 0, ipLeft: 0 });
+  const [config, setConfig] = useState<{ totalLeft: number, ipLeft: number } | undefined>(undefined);
 
   useEffect(() => {
     fetch("/api/config")
@@ -297,13 +297,14 @@ export default function Home() {
 3. 对流年大运进行 0 到 100 岁的十年分段评分（事业、财富、感情、健康四个维度）。
 4. 提供开运建议（幸运数字、颜色）和易经格言。
 
-### 输出准则（极其重要）：
-- **必须**返回一个紧凑且合法的 JSON 对象。
-- **严禁**包含任何 Markdown 格式代码块（如 \`\`\`json）。
-- **严禁**输出省略号（如 "..." 或 "省略" 等）。务必完整输出所有数组元素！
-- **严禁**包含 JSON 以外的任何文本、开场白、解释或结束语。
-- **语气风格**：【${tone}】。
-- **字数要求**：${mode === "精要模式" ? "全文重点突出，总长限制在 600 字以内" : "全文详尽深刻，总长限制在 1200 字以内"}。
+### 输出准则（极其重要，违反将被视为失败）：
+1. **必须**返回一个紧凑且合法的 JSON 对象。
+2. **严禁**包含任何 Markdown 格式代码块（如 \`\`\`json）。
+3. **严禁**输出省略号（如 "..." 或 "省略" 等）。所有字段、数组内容必须完整输出，不要偷懒！
+4. **必须包含以下所有顶层字段**，绝对不能遗漏：'bazi', 'nameLocationAnalysis', 'summary', 'recent', 'career', 'wealth', 'family', 'health', 'decades', 'luckyNumbers', 'luckyColors', 'iChingQuote'。
+5. **严禁**在 JSON 外包含任何文本、开场白或结束语。
+6. **语气风格**：【${tone}】。
+7. **字数要求**：${mode === "精要模式" ? "全文重点突出，总长限制在 800 字以内" : "全文详尽深刻，总长限制在 1200 字以内，务必保证每个字段的内容充实且结构完整"}。
 
 ### JSON 结构要求 (注意不要输出格式之外的注释，必须输出完整的列表数据)：
 {
@@ -321,9 +322,10 @@ export default function Home() {
   "family": "感情婚姻与家庭关系...",
   "health": "健康、体质与注意事项...",
   "decades": [
-     {"ageRange": "0-10岁", "description": "运势简述与建议", "career": 70, "wealth": 45, "family": 80, "health": 90},
-     {"ageRange": "10-20岁", "description": "...", "career": 70, "wealth": 45, "family": 80, "health": 90}
-  ], // 注意：这里的 decades 数组必须按10年一段，提供到100岁的所有共10个阶段，不要用省略号
+     {"ageRange": "0-10岁", "description": "0到10岁运势详解", "career": 70, "wealth": 45, "family": 80, "health": 90},
+     {"ageRange": "10-20岁", "description": "10到20岁运势详解", "career": 70, "wealth": 45, "family": 80, "health": 90}
+     // 务必继续输出 20-30岁、30-40岁 直到 90-100岁，总共必须是10个数组元素！不要省略！
+  ],
   "luckyNumbers": "建议的 1-9 之间的 3 个互不重复的单数（奇数），以逗号分隔",
   "luckyColors": "建议的 3 种生旺颜色，以逗号分隔",
   "iChingQuote": "针对命局推演出的《易经》原文格言"
@@ -420,7 +422,16 @@ export default function Home() {
 
       // Ultra-Robust JSON Extraction and Cleaning
       const extractAndParseJson = (rawText: string) => {
-        const text = rawText.replace(/\n/g, "\\n").replace(/\r/g, "").replace(/\t/g, "\\t");
+        let text = rawText.trim();
+        if (text.startsWith("```json")) {
+           text = text.substring(7);
+        } else if (text.startsWith("```")) {
+           text = text.substring(3);
+        }
+        if (text.endsWith("```")) {
+           text = text.substring(0, text.length - 3);
+        }
+        text = text.trim();
         
         // Step 1: Try direct parse
         try {
@@ -431,58 +442,27 @@ export default function Home() {
         const firstBrace = text.indexOf("{");
         const lastBrace = text.lastIndexOf("}");
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          const candidate = text.substring(firstBrace, lastBrace + 1);
+          let candidate = text.substring(firstBrace, lastBrace + 1);
           try {
-             return JSON.parse(
-              candidate
-                .replace(/[\u0000-\u001F]+/g, " ") // Clean control chars
-                .replace(/,\s*([}\]])/g, "$1"), // Clean trailing commas
-            );
+             return JSON.parse(candidate);
           } catch (e) {}
-        }
 
-        // Step 3: Progressive block extraction (original logic improved)
-        let startPos = text.indexOf("{");
-        while (startPos !== -1) {
-          let balance = 0;
-          let inString = false;
-          let escape = false;
-          let candidate = "";
-
-          for (let i = startPos; i < text.length; i++) {
-            const char = text[i];
-            candidate += char;
-            if (escape) {
-              escape = false;
-              continue;
-            }
-            if (char === "\\") {
-              escape = true;
-              continue;
-            }
-            if (char === '"') {
-              inString = !inString;
-              continue;
-            }
-
-            if (!inString) {
-              if (char === "{") balance++;
-              else if (char === "}") {
-                balance--;
-                if (balance === 0) {
-                  try {
-                    const parsed = JSON.parse(
-                      candidate
-                        .replace(/[\u0000-\u001F]+/g, " ")
-                        .replace(/,\s*([}\]])/g, "$1"),
-                    );
-                    if (parsed && typeof parsed === "object") return parsed;
-                  } catch (e) {}
-                }
-              }
-            }
-          }
-          startPos = text.indexOf("{", startPos + 1);
+          // Try to clean trailing commas
+          try {
+             const noTrailingCommas = candidate.replace(/,\s*([}\]])/g, "$1");
+             return JSON.parse(noTrailingCommas);
+          } catch(e) {}
+          
+          // Try to escape unescaped physical newlines within strings (highly prone to errors, last resort)
+          try {
+             // naive replacement: we assume structural newlines don't matter to JSON.parse, 
+             // but if they are inside strings they break it.
+             // We can just use a more forgiving parse or replace all physical newlines with space.
+             // Replacing with space is safer than \\n because it won't break string values too badly,
+             // and structural newlines become spaces which JSON parsing ignores.
+             const noNewlines = candidate.replace(/\n/g, " ").replace(/\r/g, "");
+             return JSON.parse(noNewlines.replace(/,\s*([}\]])/g, "$1"));
+          } catch (e) {}
         }
         return null;
       };
@@ -865,12 +845,12 @@ export default function Home() {
                         <button
                           type="submit"
                           className="w-full mt-2 relative overflow-hidden rounded-xl bg-slate-800 text-white shadow-lg transition-all hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={config.ipLeft <= 0 || config.totalLeft <= 0}
+                          disabled={!config || config.ipLeft <= 0 || config.totalLeft <= 0}
                         >
                           <div className="relative flex items-center justify-center gap-2 px-6 py-4">
                             <Sparkles size={18} className="text-amber-400" />
                             <span className="font-serif text-lg font-bold tracking-widest text-white">
-                              {config.ipLeft <= 0 || config.totalLeft <= 0
+                              {config && (config.ipLeft <= 0 || config.totalLeft <= 0)
                                 ? "今日额度已用完，请明日再来"
                                 : "开演八字神机"}
                             </span>

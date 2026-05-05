@@ -239,13 +239,31 @@ export const onRequest = async (context: any) => {
         const ai = new GoogleGenAI({ apiKey });
         let stream;
         try {
+          const geminiModelId = ((await getSetting("gemini_model_id")) as string) || "gemini-2.0-flash";
           stream = await ai.models.generateContentStream({
-            model: "gemini-2.0-flash",
+            model: geminiModelId,
             contents: body.prompt,
           });
         } catch (err: any) {
-          console.error("AI API Error:", err.message);
-          return errorResponse(err.message, 503);
+          console.error("AI API Error:", err);
+          let errMsg = err?.message || String(err);
+          try {
+            if (errMsg.startsWith('{')) {
+              const parsed = JSON.parse(errMsg);
+              if (parsed.error && parsed.error.message) {
+                errMsg = parsed.error.message;
+              }
+            } else if (errMsg.startsWith('ApiError: {')) {
+              const parsed = JSON.parse(errMsg.substring(10));
+              if (parsed.error && parsed.error.message) {
+                errMsg = parsed.error.message;
+              }
+            }
+          } catch(e) {}
+          return new Response(`\n--STREAM-ERROR--\n${errMsg}`, {
+            status: 200,
+            headers: { "Content-Type": "text/plain; charset=utf-8" }
+          });
         }
 
         (async () => {
@@ -258,8 +276,22 @@ export const onRequest = async (context: any) => {
             await writer.close();
           } catch (err: any) {
             console.error("Stream error:", err);
+            let errMsg = err?.message || String(err);
+            try {
+              if (errMsg.startsWith('{')) {
+                const parsed = JSON.parse(errMsg);
+                if (parsed.error && parsed.error.message) {
+                  errMsg = parsed.error.message;
+                }
+              } else if (errMsg.startsWith('ApiError: {')) {
+                const parsed = JSON.parse(errMsg.substring(10));
+                if (parsed.error && parsed.error.message) {
+                  errMsg = parsed.error.message;
+                }
+              }
+            } catch(e) {}
             await writer.write(
-              encoder.encode("\\n--STREAM-ERROR--\\n" + err.message),
+              encoder.encode(`\n--STREAM-ERROR--\n${errMsg}`),
             );
             await writer.close();
           }

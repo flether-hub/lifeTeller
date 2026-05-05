@@ -171,13 +171,13 @@ function LuckyVisual({
         </div>
 
         {luckyStats.icon}
-        <span className="text-[12px] font-bold uppercase tracking-[0.2em] opacity-80 mb-4">
+        <span className="text-[15px] font-bold uppercase tracking-[0.2em] opacity-80 mb-4">
           LUCKY ELEMENTS
         </span>
 
         {numbers && (
           <div className="mb-5 text-center w-full relative z-10">
-            <h4 className="text-[13px] font-serif font-bold tracking-widest mb-2 opacity-90">
+            <h4 className="text-[15px] font-serif font-bold tracking-widest mb-2 opacity-90">
               五行吉数
             </h4>
             <div className="flex flex-col gap-2 items-center">
@@ -185,7 +185,7 @@ function LuckyVisual({
                 <div key={idx} className="flex items-center gap-2">
                   {group.tag && (
                     <span
-                      className={`text-[14px] font-bold opacity-80 whitespace-nowrap ${getWuXingTextColor(group.tag)}`}
+                      className={`text-base font-bold opacity-80 whitespace-nowrap ${getWuXingTextColor(group.tag)}`}
                     >
                       ({group.tag})
                     </span>
@@ -194,7 +194,7 @@ function LuckyVisual({
                     {group.nums.map((n, i) => (
                       <div
                         key={i}
-                        className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-[15px] font-bold font-serif opacity-90 transition-transform hover:-translate-y-1 shrink-0"
+                        className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-lg font-bold font-serif opacity-90 transition-transform hover:-translate-y-1 shrink-0"
                       >
                         {n}
                       </div>
@@ -208,7 +208,7 @@ function LuckyVisual({
 
         {colors && (
           <div className="text-center w-full relative z-10">
-            <h4 className="text-[13px] font-serif font-bold tracking-widest mb-3 opacity-90">
+            <h4 className="text-[15px] font-serif font-bold tracking-widest mb-3 opacity-90">
               生旺颜色
             </h4>
             <div className="flex flex-wrap justify-center items-center gap-2">
@@ -222,7 +222,7 @@ function LuckyVisual({
                   return (
                     <div
                       key={i}
-                      className={`inline-block px-4 py-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] border text-[13px] font-serif opacity-95 transition-transform hover:-translate-y-1 ${colorClasses}`}
+                      className={`inline-block px-4 py-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] border text-[15px] font-serif opacity-95 transition-transform hover:-translate-y-1 ${colorClasses}`}
                     >
                       {colorName}
                     </div>
@@ -267,12 +267,10 @@ function BaZiVisual({ bazi }: { bazi: any[] }) {
   if (!bazi || !Array.isArray(bazi) || bazi.length === 0) return null;
 
   return (
-    <div className="flex justify-center py-6 relative z-10">
+    <div className="flex justify-center py-6 relative z-10 px-4">
       <svg
-        width="360"
-        height="180"
         viewBox="0 0 360 180"
-        className="drop-shadow-lg font-serif"
+        className="w-full max-w-[360px] h-auto drop-shadow-lg font-serif"
       >
         <defs>
           <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -412,59 +410,9 @@ export function FortuneResultView(props: {
     calendarType: string;
   };
 }) {
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const contentRef = React.useRef<HTMLDivElement>(null);
-  const [scale, setScale] = React.useState(1);
-  const [height, setHeight] = React.useState<number | undefined>(undefined);
-
-  React.useEffect(() => {
-    const updateLayout = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.offsetWidth || window.innerWidth;
-        const targetWidth = 896;
-        let newScale = 1;
-        if (width < targetWidth && width > 0) {
-          newScale = width / targetWidth;
-        }
-        setScale(newScale);
-
-        if (contentRef.current) {
-          setHeight(contentRef.current.offsetHeight * newScale);
-        }
-      }
-    };
-
-    updateLayout();
-
-    let observer: ResizeObserver;
-    if (typeof ResizeObserver !== "undefined") {
-      observer = new ResizeObserver(updateLayout);
-      if (contentRef.current) observer.observe(contentRef.current);
-      if (containerRef.current?.parentElement)
-        observer.observe(containerRef.current.parentElement);
-    }
-
-    window.addEventListener("resize", updateLayout);
-    return () => {
-      window.removeEventListener("resize", updateLayout);
-      if (observer) observer.disconnect();
-    };
-  }, [props.result]);
-
   return (
-    <div
-      ref={containerRef}
-      className="w-full relative overflow-hidden bg-slate-50 flex justify-center"
-      style={{ height: height ? `${height}px` : "auto" }}
-    >
-      <div
-        ref={contentRef}
-        className="origin-top-left absolute top-0 left-0"
-        style={{
-          width: "896px",
-          transform: `scale(${scale})`,
-        }}
-      >
+    <div className="w-full bg-slate-50 flex justify-center">
+      <div className="w-full max-w-4xl" id="fortune-result-content">
         <FortuneResultViewInner {...props} />
       </div>
     </div>
@@ -535,39 +483,39 @@ function FortuneResultViewInner({
       </div>
 
       <div className="relative z-10 pt-8 pb-6 px-4 text-center overflow-hidden">
-        <div className="flex justify-center items-center gap-3 mb-2">
-          <Bot className="w-8 h-8 text-indigo-600" />
-          <h2 className="text-4xl font-serif text-slate-900 font-bold tracking-widest drop-shadow-sm">
+        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mb-2">
+          <Bot className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600" />
+          <h2 className="text-2xl sm:text-4xl font-serif text-slate-900 font-bold tracking-widest drop-shadow-sm">
             命理玄鉴
           </h2>
-          <YinYangIcon className="w-8 h-8 text-indigo-800" />
+          <YinYangIcon className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-800" />
         </div>
-        <p className="text-slate-500 font-light tracking-widest mb-6 flex items-center justify-center gap-2">
-          <span>
+        <p className="text-sm sm:text-base text-slate-500 font-light tracking-widest mb-6 flex items-center justify-center gap-2 px-2">
+          <span className="max-w-prose">
             {result.iChingQuote ? result.iChingQuote : "天命微茫，八字探微"}
           </span>
         </p>
 
         {/* User Info Header for PDF */}
         {userInfo && (
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-slate-700 font-serif mb-6 border-y border-indigo-200/50 py-3 max-w-3xl mx-auto bg-white/40 backdrop-blur-md rounded-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]">
-            <p className="flex items-center gap-1">
-              <LibraryBig size={16} className="text-indigo-500" />
-              缘主：
+          <div className="grid grid-cols-1 sm:flex sm:flex-wrap justify-center gap-x-8 gap-y-3 text-sm sm:text-base text-slate-700 font-serif mb-6 border-y border-indigo-200/50 py-4 max-w-3xl mx-auto bg-white/40 backdrop-blur-md rounded-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] px-4">
+            <p className="flex items-center justify-center sm:justify-start gap-2">
+              <LibraryBig size={16} className="text-indigo-500 shrink-0" />
+              <span>缘主：</span>
               <span className="font-medium text-indigo-950">
                 {userInfo.name}（{userInfo.gender}）
               </span>
             </p>
-            <p className="flex items-center gap-1">
-              <Clock size={16} className="text-indigo-500" />
-              生辰：
+            <p className="flex items-center justify-center sm:justify-start gap-2">
+              <Clock size={16} className="text-indigo-500 shrink-0" />
+              <span>生辰：</span>
               <span className="font-medium text-indigo-950">
                 {userInfo.calendarType} {userInfo.date} {userInfo.time}
               </span>
             </p>
-            <p className="flex items-center gap-1">
-              <MapPin size={16} className="text-indigo-500" />
-              出生地：
+            <p className="flex items-center justify-center sm:justify-start gap-2">
+              <MapPin size={16} className="text-indigo-500 shrink-0" />
+              <span>出生地：</span>
               <span className="font-medium text-indigo-950">
                 {userInfo.province}
               </span>
@@ -590,7 +538,7 @@ function FortuneResultViewInner({
                   <Compass className="w-6 h-6 text-indigo-500" />
                   姓名与方位的命理渊源
                 </h3>
-                <p className="text-slate-700 text-[15px] leading-relaxed whitespace-pre-line">
+                <p className="text-slate-700 text-base leading-relaxed whitespace-pre-line">
                   {result.nameLocationAnalysis}
                 </p>
               </div>
@@ -601,7 +549,7 @@ function FortuneResultViewInner({
                 <Bot className="w-6 h-6 text-indigo-500" />
                 AI 大模型总评
               </h3>
-              <p className="text-slate-700 text-[15px] leading-relaxed whitespace-pre-line">
+              <p className="text-slate-700 text-base leading-relaxed whitespace-pre-line">
                 {result.summary}
               </p>
             </div>
@@ -612,7 +560,7 @@ function FortuneResultViewInner({
                   <Sparkles className="w-6 h-6 text-indigo-500" />
                   近期运势
                 </h3>
-                <p className="text-slate-700 text-[15px] leading-relaxed whitespace-pre-line">
+                <p className="text-slate-700 text-base leading-relaxed whitespace-pre-line">
                   {result.recent}
                 </p>
               </div>
@@ -659,15 +607,15 @@ function FortuneResultViewInner({
                       )}
                     </div>
                     <div
-                      className={`flex-1 px-5 py-4 flex items-baseline gap-2 rounded-2xl border ${isCurrent ? "bg-indigo-50/80 border-indigo-200 shadow-md ring-1 ring-indigo-500/20" : "bg-white/60 border-slate-100 shadow-sm"} backdrop-blur-sm transition-all hover:shadow-md`}
+                      className={`flex-1 px-5 py-4 flex flex-col sm:flex-row sm:items-baseline gap-2 rounded-2xl border ${isCurrent ? "bg-indigo-50/80 border-indigo-200 shadow-md ring-1 ring-indigo-500/20" : "bg-white/60 border-slate-100 shadow-sm"} backdrop-blur-sm transition-all hover:shadow-md`}
                     >
                       <div
-                        className={`font-serif font-bold whitespace-nowrap text-base ${isCurrent ? "text-indigo-700" : "text-slate-800"}`}
+                        className={`font-serif font-bold whitespace-nowrap text-base sm:text-lg ${isCurrent ? "text-indigo-700" : "text-slate-800"}`}
                       >
                         {decade.ageRange}：
                       </div>
                       <div
-                        className={`leading-relaxed text-sm ${isCurrent ? "text-indigo-950 font-medium" : "text-slate-600"}`}
+                        className={`leading-relaxed text-sm sm:text-base ${isCurrent ? "text-indigo-950 font-medium" : "text-slate-600"}`}
                       >
                         {decade.description}
                       </div>
@@ -690,11 +638,11 @@ function FortuneResultViewInner({
         )}
         <div className="flex items-center gap-2 text-indigo-400">
           <Compass size={14} />
-          <span className="font-serif tracking-widest text-[13px]">
+          <span className="font-serif tracking-widest text-sm">
             life.fanso.site
           </span>
         </div>
-        <div className="text-[11px] text-slate-400 font-serif">
+        <div className="text-[15px] text-slate-400 font-serif">
           排演时间：{new Date().toLocaleDateString("zh-CN")}
         </div>
       </div>
@@ -717,7 +665,7 @@ function ResultCard({
       <h3 className="text-lg font-serif text-indigo-950 mb-3 border-b border-indigo-50 pb-2 flex items-center gap-2">
         <span>{icon}</span> {title}
       </h3>
-      <p className="text-slate-700 text-[14px] leading-relaxed whitespace-pre-line">
+      <p className="text-slate-700 text-base leading-relaxed whitespace-pre-line">
         {content}
       </p>
     </div>
