@@ -515,21 +515,23 @@ export default function Admin() {
                           <td className="p-4 font-mono text-sm text-slate-400 whitespace-nowrap">
                             {r.ip}
                           </td>
-                          <td className="p-4 text-right space-x-2 whitespace-nowrap">
-                            <button
-                              onClick={() => viewReading(r)}
-                              className="text-blue-500 hover:text-blue-700 transition"
-                              title="查看结果"
-                            >
-                              <Eye size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(r.id)}
-                              className="text-rose-500 hover:text-rose-700 transition"
-                              title="删除记录"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                          <td className="p-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-3">
+                              <button
+                                onClick={() => viewReading(r)}
+                                className="text-blue-500 hover:text-blue-700 transition"
+                                title="查看结果"
+                              >
+                                <Eye size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(r.id)}
+                                className="text-rose-500 hover:text-rose-700 transition"
+                                title="删除记录"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -692,8 +694,8 @@ export default function Admin() {
                         </th>
                         <th className="p-4 font-medium text-slate-600">IP / 位置</th>
                         <th className="p-4 font-medium text-slate-600">内容</th>
-                        <th className="p-4 font-medium text-slate-600">时间</th>
-                        <th className="p-4 font-medium text-slate-600 text-right">操作</th>
+                        <th className="p-4 font-medium text-slate-600 whitespace-nowrap">时间</th>
+                        <th className="p-4 font-medium text-slate-600 text-right whitespace-nowrap">操作</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-blue-50">
@@ -712,23 +714,25 @@ export default function Admin() {
                           <td className="p-4 text-xs text-slate-400 whitespace-nowrap">
                             {new Date(c.created_at).toLocaleString()}
                           </td>
-                          <td className="p-4 text-right space-x-3">
-                            <button 
-                              onClick={() => handleBanIp(c.ip)}
-                              className="text-orange-500 hover:text-orange-700 transition" 
-                              title="封禁 IP"
-                            >
-                              <ShieldX size={18} />
-                            </button>
-                            {!c.is_deleted && (
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-3">
                               <button 
-                                onClick={() => handleDeleteComment(c.id)}
-                                className="text-rose-500 hover:text-rose-700 transition" 
-                                title="删除评论"
+                                onClick={() => handleBanIp(c.ip)}
+                                className="text-orange-500 hover:text-orange-700 transition" 
+                                title="封禁 IP"
                               >
-                                <Trash2 size={18} />
+                                <ShieldX size={18} />
                               </button>
-                            )}
+                              {!c.is_deleted && (
+                                <button 
+                                  onClick={() => handleDeleteComment(c.id)}
+                                  className="text-rose-500 hover:text-rose-700 transition" 
+                                  title="删除评论"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}

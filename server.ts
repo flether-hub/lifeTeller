@@ -7,6 +7,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import { jwtVerify, SignJWT } from 'jose';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +27,7 @@ try {
   const dbPath = path.join(process.cwd(), 'lifeteller_v3.db');
   console.log(`Using database at: ${dbPath}`);
   db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
   const schemaPath = path.join(process.cwd(), 'schema.sql');
   console.log(`Reading schema from: ${schemaPath}`);
   const schema = fs.readFileSync(schemaPath, 'utf8');
@@ -52,7 +54,8 @@ try {
   // Still try to start the server but it will fail on routes
 }
 
-  const getSecret = () => new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret');
+  const FALLBACK_SECRET = crypto.randomBytes(32).toString('hex');
+  const getSecret = () => new TextEncoder().encode(process.env.JWT_SECRET || FALLBACK_SECRET);
 
   // Auth Middleware
   const authenticateAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -453,6 +456,10 @@ try {
               }
             }
           } catch(e) {}
+          
+          // Mask API keys to prevent leakage
+          errMsg = errMsg.replace(/(sk-[a-zA-Z0-9]{20,})/g, "sk-***").replace(/(AIza[0-9A-Za-z-_]{35})/g, "AIza***");
+          
           res.write(`\n--STREAM-ERROR--\n${errMsg}`);
           return res.end();
         }
@@ -484,6 +491,10 @@ try {
           }
         }
       } catch(e) {}
+      
+      // Mask API keys to prevent leakage
+      errMsg = errMsg.replace(/(sk-[a-zA-Z0-9]{20,})/g, "sk-***").replace(/(AIza[0-9A-Za-z-_]{35})/g, "AIza***");
+      
       res.write(`\n--STREAM-ERROR--\n${errMsg}`);
       res.end();
     }
@@ -546,7 +557,8 @@ try {
 
   app.get('/api/admin/readings', authenticateAdmin, (req, res) => {
     const page = parseInt(req.query.page as string || '1');
-    const limit = parseInt(req.query.limit as string || '20');
+    let limit = parseInt(req.query.limit as string || '20');
+    if (limit > 1000) limit = 1000;
     const offset = (page - 1) * limit;
 
     const countRes = db.prepare('SELECT COUNT(*) as count FROM readings').get() as any;
