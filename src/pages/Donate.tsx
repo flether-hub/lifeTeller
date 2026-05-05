@@ -227,7 +227,7 @@ export default function Donate() {
               )}
               <div className="mt-4 flex items-center justify-center gap-6">
                  <p className="text-[10px] text-slate-400 italic">
-                  * 评论经过风控系统审核后显示
+                  * 评论即时可见，无需审核
                 </p>
                 <div className="h-3 w-[1px] bg-slate-100" />
                  <p className="text-[10px] text-slate-400 italic">
