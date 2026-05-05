@@ -23,7 +23,7 @@ app.use(express.json());
 // Initialize Database
 let db: any;
 try {
-  const dbPath = path.join(process.cwd(), 'lifeteller.db');
+  const dbPath = path.join(process.cwd(), 'lifeteller_v3.db');
   console.log(`Using database at: ${dbPath}`);
   db = new Database(dbPath);
   const schemaPath = path.join(process.cwd(), 'schema.sql');
