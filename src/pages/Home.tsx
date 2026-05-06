@@ -233,6 +233,21 @@ export default function Home() {
       setError("缘主，请填写姓名和出生地，以保算命准确。");
       return;
     }
+
+    // 姓名合规检查：不能有英文，不能超过6个汉字，必须是纯中文
+    const trimmedName = name.trim();
+    if (/[a-zA-Z]/.test(trimmedName)) {
+      setError("缘主，姓名中不能包含英文字符，请使用中文姓名。");
+      return;
+    }
+    if (!/^[\u4e00-\u9fa5]+$/.test(trimmedName)) {
+      setError("缘主，请使用中文字符填写完整姓名。");
+      return;
+    }
+    if (trimmedName.length > 6) {
+      setError("缘主，姓名长度请保持在6个汉字以内。");
+      return;
+    }
     if (!date) {
       setError("缘主，请至少年月日输入准确的出生日期");
       return;
@@ -745,10 +760,11 @@ export default function Home() {
                             <input
                               type="text"
                               required
+                              maxLength={6}
                               value={name}
                               onChange={(e) => setName(e.target.value)}
                               className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all font-sans"
-                              placeholder={t("推荐真实姓名")}
+                              placeholder={t("请输入真实中文姓名")}
                             />
                           </div>
 
