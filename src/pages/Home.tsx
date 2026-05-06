@@ -198,15 +198,24 @@ export default function Home() {
           setTime(parsed.userInfo?.time || SHICHEN[0].value);
           setProvince(parsed.userInfo?.province || PROVINCES[0]);
           setCalendarType(parsed.userInfo?.calendarType || "阳历");
+          
+          setError(null);
+          setIsReading(false);
           setResult(parsed.result);
+          
           window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          setHasLastReading(false);
+          localStorage.removeItem("last_reading");
         }
       }
     } catch (e) {
       console.error(e);
+      setHasLastReading(false);
+      localStorage.removeItem("last_reading");
       alert("抱歉，未能成功恢复历史测算记录，请重新测算。");
     }
-  }, [setName, setGender, setDate, setTime, setProvince, setCalendarType, setResult, t]);
+  }, [setName, setGender, setDate, setTime, setProvince, setCalendarType, setResult, setError, setIsReading, t]);
 
   const [config, setConfig] = useState<{ totalLeft: number, ipLeft: number } | undefined>(undefined);
 
@@ -229,10 +238,16 @@ export default function Home() {
 
   useEffect(() => {
     // 如果额度已用完，且本地有历史记录且当前未显示结果且未在测算，则自动恢复上次记录
-    if (config && (config.ipLeft <= 0 || config.totalLeft <= 0) && !result && !isReading && hasLastReading) {
-      handleRestoreLastReading();
-    }
-  }, [config, result, isReading, hasLastReading]);
+    // 增加一个小延迟，确保其它状态已就绪
+    const checkAndRestore = () => {
+      if (config && (config.ipLeft <= 0 || config.totalLeft <= 0) && !result && !isReading && hasLastReading) {
+        handleRestoreLastReading();
+      }
+    };
+    
+    const timer = setTimeout(checkAndRestore, 500);
+    return () => clearTimeout(timer);
+  }, [config, result, isReading, hasLastReading, handleRestoreLastReading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
