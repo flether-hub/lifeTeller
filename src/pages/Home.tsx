@@ -236,19 +236,6 @@ export default function Home() {
       .catch((err) => console.error(err));
   }, []);
 
-  useEffect(() => {
-    // 如果额度已用完，且本地有历史记录且当前未显示结果且未在测算，则自动恢复上次记录
-    // 增加一个小延迟，确保其它状态已就绪
-    const checkAndRestore = () => {
-      if (config && (config.ipLeft <= 0 || config.totalLeft <= 0) && !result && !isReading && hasLastReading) {
-        handleRestoreLastReading();
-      }
-    };
-    
-    const timer = setTimeout(checkAndRestore, 500);
-    return () => clearTimeout(timer);
-  }, [config, result, isReading, hasLastReading, handleRestoreLastReading]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !province) {
@@ -768,7 +755,10 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={handleRestoreLastReading}
-                            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-slate-700 text-[10px] sm:text-xs font-medium rounded-xl shadow-sm border border-slate-200 transition whitespace-nowrap ml-2 sm:ml-4 shrink-0"
+                            className={cn(
+                              "px-3 py-1.5 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-slate-700 text-[10px] sm:text-xs font-medium rounded-xl shadow-sm border border-slate-200 transition whitespace-nowrap ml-2 sm:ml-4 shrink-0",
+                              config && (config.ipLeft <= 0 || config.totalLeft <= 0) && "purple-breathing border-violet-300 text-violet-700"
+                            )}
                           >
                             {t("查看报告")}
                           </button>
