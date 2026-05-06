@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Bagua } from "../components/Bagua";
@@ -186,7 +186,7 @@ export default function Home() {
     } catch (e) {}
   }, []);
 
-  const handleRestoreLastReading = () => {
+  const handleRestoreLastReading = useCallback(() => {
     try {
       const item = localStorage.getItem("last_reading");
       if (item) {
@@ -206,7 +206,7 @@ export default function Home() {
       console.error(e);
       alert("抱歉，未能成功恢复历史测算记录，请重新测算。");
     }
-  };
+  }, [setName, setGender, setDate, setTime, setProvince, setCalendarType, setResult, t]);
 
   const [config, setConfig] = useState<{ totalLeft: number, ipLeft: number } | undefined>(undefined);
 
@@ -226,6 +226,13 @@ export default function Home() {
       })
       .catch((err) => console.error(err));
   }, []);
+
+  useEffect(() => {
+    // 如果额度已用完，且本地有历史记录且当前未显示结果且未在测算，则自动恢复上次记录
+    if (config && (config.ipLeft <= 0 || config.totalLeft <= 0) && !result && !isReading && hasLastReading) {
+      handleRestoreLastReading();
+    }
+  }, [config, result, isReading, hasLastReading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -642,6 +649,7 @@ export default function Home() {
         localStorage.setItem("last_reading", JSON.stringify(lastReading));
       } catch (e) {}
 
+      setHasLastReading(true);
       setResult(validated as FortuneResult);
       setIsReading(false);
       abortControllerRef.current = null;
@@ -661,6 +669,7 @@ export default function Home() {
         return; // Handled by handleStop
       }
       setError(err.message);
+      setIsReading(false);
       setShowDebug(true);
       addLog(err.message);
     }
