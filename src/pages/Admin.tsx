@@ -526,7 +526,7 @@ export default function Admin() {
                             />
                           </td>
                           <td className="p-4 text-slate-500 text-sm whitespace-nowrap">
-                            #{displayId}
+                            {displayId}
                           </td>
                           <td className="p-4 text-slate-600 whitespace-nowrap">
                             {r.created_at
@@ -578,7 +578,7 @@ export default function Admin() {
               </div>
 
               {/* Pagination Controls */}
-              {total > 0 && (
+              {total > limit && (
                 <div className="flex items-center justify-between mt-6 bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
                   <div className="text-sm text-slate-500 font-medium">
                     共 {total} 条记录

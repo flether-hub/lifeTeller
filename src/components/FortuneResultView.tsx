@@ -128,54 +128,57 @@ function LuckyVisual({
     return results.filter(r => r.nums.length > 0);
   };
 
-  const luckyStats = parseWuXing((numbers || "") + " " + (colors || ""));
-  const parsedNumbers = parseLuckyNumbers(numbers || "");
+  const parsedNumbers = (numbers || "")
+    .toString()
+    .match(/\d+/g) || ["1", "3", "9"];
+  const finalNumbers = parsedNumbers.slice(0, 3);
+  
+  const parsedColors = (colors || "木色, 火色, 土色")
+    .toString()
+    .split(/[、\s，,;；]+/)
+    .filter((c) => c.trim())
+    .map((c) => {
+      const colorName = c.split(/[（(]/)[0].trim();
+      return colorName.length > 2 ? colorName.substring(0, 2) : colorName;
+    })
+    .slice(0, 3);
 
   return (
     <div className="flex flex-col gap-6 py-2">
       {numbers && (
-        <div className="text-left">
-          <div className="flex items-center gap-2 mb-2 border-l-2 border-slate-100 pl-3">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t("五行吉数")}</span>
+        <div className="text-center">
+          <div className="flex flex-col items-center gap-1 mb-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{t("五行吉数")}</span>
+            <div className="h-0.5 w-6 bg-slate-100 rounded-full" />
           </div>
-          <div className="flex flex-wrap gap-4 pl-4">
-            {parsedNumbers.map((group, idx) => (
-              <div key={idx} className="flex flex-wrap items-center gap-3">
-                {group.nums.map((n, i) => (
-                  <span
-                    key={i}
-                    className="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center text-xl font-bold font-sans text-slate-700 leading-none shadow-sm bg-white"
-                  >
-                    {n}
-                  </span>
-                ))}
-              </div>
+          <div className="flex justify-center gap-4">
+            {finalNumbers.map((n, i) => (
+              <span
+                key={i}
+                className="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center text-xl font-bold font-sans text-slate-700 leading-none shadow-sm bg-white"
+              >
+                {n}
+              </span>
             ))}
           </div>
         </div>
       )}
 
       {colors && (
-        <div className="text-left">
-          <div className="flex items-center gap-2 mb-2 border-l-2 border-slate-100 pl-3">
-             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t("生旺颜色")}</span>
+        <div className="text-center">
+          <div className="flex flex-col items-center gap-1 mb-3">
+             <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{t("生旺颜色")}</span>
+             <div className="h-0.5 w-6 bg-slate-100 rounded-full" />
           </div>
-          <div className="flex flex-wrap gap-x-2 gap-y-2 pl-4">
-            {colors
-              .split(/[、\s，,;；]+/)
-              .filter((c) => c.trim())
-              .map((c, i) => {
-                const colorName = c.split(/[（(]/)[0].trim();
-                if (!colorName || colorName.length > 10) return null;
-                return (
-                  <div
-                    key={i}
-                    className={`px-3 py-1 text-sm font-bold font-sans rounded-md border ${getColorBgStyle(colorName)} shadow-sm`}
-                  >
-                    {t(colorName)}
-                  </div>
-                );
-              })}
+          <div className="flex justify-center gap-3">
+            {parsedColors.map((colorName, i) => (
+              <div
+                key={i}
+                className={`w-16 py-1.5 text-sm font-bold font-sans rounded-lg border ${getColorBgStyle(colorName)} shadow-sm flex items-center justify-center`}
+              >
+                {t(colorName)}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -220,7 +223,7 @@ function BaZiVisual({ bazi }: { bazi: any[] }) {
         {/* Traditional reading: Hour, Day, Month, Year */}
         {bazi.map((b, i) => (
           <div key={i} className="flex flex-col items-center gap-2">
-            <span className="text-[10px] font-medium text-slate-300 tracking-widest uppercase">{t(b.pillar)}</span>
+            <span className="text-xs font-bold text-slate-500 tracking-[0.2em] uppercase">{t(b.pillar)}</span>
             <div className="flex flex-col border border-slate-100 rounded-sm overflow-hidden bg-white">
               <div className="w-12 h-12 flex items-center justify-center text-xl font-serif font-bold text-slate-800 border-b border-slate-50">
                 {t(b.gan)}
@@ -229,7 +232,7 @@ function BaZiVisual({ bazi }: { bazi: any[] }) {
                 {t(b.zhi)}
               </div>
             </div>
-            <span className="text-[10px] text-slate-400 font-serif opacity-70">{t(b.wuXing)}</span>
+            <span className="text-xs font-bold text-slate-500 opacity-80 uppercase tracking-widest">{t(b.wuXing)}</span>
           </div>
         ))}
       </div>
@@ -373,15 +376,15 @@ function FortuneResultViewInner({
         {userInfo && (
           <div className="mt-8 flex justify-center gap-10 text-xs text-indigo-800 font-serif">
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">{t("缘主")}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("缘主")}</span>
               <span className="font-bold text-indigo-950 text-sm">{t(userInfo.name)}（{t(userInfo.gender)}）</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">{t("生辰")}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("生辰")}</span>
               <span className="font-bold text-indigo-950 text-sm">{t(userInfo.calendarType)} {userInfo.date} {t(userInfo.time)}</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">{t("出生地")}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("出生地")}</span>
               <span className="font-bold text-indigo-950 text-sm">{t(userInfo.province)}</span>
             </div>
           </div>
@@ -462,17 +465,17 @@ function FortuneResultViewInner({
       {/* 页脚 - 易经箴言在此显示 */}
       <div className="mt-16 pt-12 border-t border-slate-900/10 text-center flex flex-col items-center">
         <div className="mb-4 flex flex-col items-center gap-1">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t("易经箴言")}</span>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{t("易经箴言")}</span>
         </div>
         <p className="text-base font-sans font-bold text-slate-600 mb-8 max-w-lg leading-relaxed text-center px-4">
           "{result.iChingQuote || t("天数难测，唯德报之")}"
         </p>
-        <div className="flex flex-col items-center gap-1 opacity-20 hover:opacity-40 transition-opacity pb-12">
+        <div className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity pb-12 text-slate-500">
           <div className="flex items-center gap-2">
             <Compass size={18} />
             <span className="text-[10px] tracking-[0.5em] uppercase font-serif">life.fanso.site</span>
           </div>
-          <span className="text-[9px] font-serif uppercase tracking-widest">Calculated on {new Date().toLocaleDateString()}</span>
+          <span className="text-[9px] font-serif uppercase tracking-widest font-medium">Calculated on {new Date().toLocaleDateString()}</span>
         </div>
       </div>
     </div>

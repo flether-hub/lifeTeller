@@ -9,9 +9,15 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
   // Generate yearly data using cosine interpolation
   const yearlyData = useMemo(() => {
     const parseRange = (rangeStr: string) => {
-      const match = rangeStr.match(/(\d+)-(\d+)岁/);
+      // Handle both Simplified (岁) and Traditional (歲) characters, and various separators (-, ~, 至)
+      const match = String(rangeStr).match(/(\d+)\s*[-~至]\s*(\d+)\s*[岁歲]?/);
       if (match) {
         return { start: parseInt(match[1]), end: parseInt(match[2]) };
+      }
+      // Fallback for simple single numbers or other formats
+      const singleMatch = String(rangeStr).match(/(\d+)/g);
+      if (singleMatch && singleMatch.length >= 2) {
+        return { start: parseInt(singleMatch[0]), end: parseInt(singleMatch[1]) };
       }
       return { start: 0, end: 10 };
     };

@@ -15,6 +15,7 @@ import {
   History,
   Bot,
   StopCircle,
+  Heart,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { FortuneChart } from "../components/FortuneChart";
@@ -133,7 +134,7 @@ export default function Home() {
     () => localStorage.getItem("last_province") || PROVINCES[0],
   );
   const [tone, setTone] = useState(
-    () => localStorage.getItem("last_tone") || TONE_OPTIONS[0],
+    () => localStorage.getItem("last_tone") || TONE_OPTIONS[1],
   );
   const [mode, setMode] = useState(
     () => localStorage.getItem("last_mode") || MODE_OPTIONS[0],
@@ -568,16 +569,37 @@ export default function Home() {
         wealth: parsed.wealth || "财气内敛，建议开源节流。",
         family: parsed.family || "家庭和睦是福，宜多沟通。",
         health: parsed.health || "注意规律作息，平和心态。",
-        decades: (parsed.decades || []).map((d: any) => ({
-          ageRange: d.ageRange || "未知阶段",
-          description: d.description || "运势平稳",
-          career: Number(d.career) || 50,
-          wealth: Number(d.wealth) || 50,
-          family: Number(d.family) || 50,
-          health: Number(d.health) || 50,
-        })),
-        luckyNumbers: parsed.luckyNumbers || "1, 3, 9",
-        luckyColors: parsed.luckyColors || "青色、褐色",
+        decades: (parsed.decades || []).map((d: any) => {
+          const parseScore = (val: any) => {
+            if (typeof val === 'number') return val;
+            if (typeof val === 'string') {
+              const num = parseInt(val.match(/\d+/)?.[0] || '50');
+              return isNaN(num) ? 50 : num;
+            }
+            return 50;
+          };
+          return {
+            ageRange: d.ageRange || "未知阶段",
+            description: d.description || "运势平稳",
+            career: parseScore(d.career),
+            wealth: parseScore(d.wealth),
+            family: parseScore(d.family),
+            health: parseScore(d.health),
+          };
+        }),
+        luckyNumbers: (parsed.luckyNumbers || "1, 3, 9")
+          .toString()
+          .split(/[,，、\s]+/)
+          .filter(Boolean)
+          .slice(0, 3)
+          .join(", "),
+        luckyColors: (parsed.luckyColors || "青色, 褐色, 金色")
+          .toString()
+          .split(/[,，、\s]+/)
+          .filter(Boolean)
+          .map((c: string) => c.length > 2 ? c.substring(0, 2) : c)
+          .slice(0, 3)
+          .join(", "),
         iChingQuote: parsed.iChingQuote || "天行健，君子以自强不息。",
       };
 
@@ -1116,8 +1138,8 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="text-red-500 text-lg font-bold leading-tight mt-[-2px]">
-                    ♥
+                  <span className="text-red-500 mt-0.5 shrink-0">
+                    <Heart size={16} fill="currentColor" />
                   </span>
                   <span className="leading-relaxed">
                     <strong className="text-slate-800 font-bold mr-1">
