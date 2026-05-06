@@ -96,7 +96,7 @@ export default function Donate() {
           {/* Left Side: Support Section (40%) */}
           <div className="lg:w-[400px] p-6 sm:p-10 border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col items-center text-center shrink-0">
             <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
-              <Heart size={32} className="text-rose-500 animate-pulse" />
+              <Heart size={32} className="text-rose-500 animate-pulse" fill="currentColor" />
             </div>
             
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-800 mb-4">{t("支持我们的发展")}</h2>
@@ -156,8 +156,8 @@ export default function Donate() {
                   <MessageSquare size={22} />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-800">{t("用户评论反馈")}</h3>
-                  <p className="text-[10px] text-slate-400 font-sans tracking-wider mt-1">{t("每一条建议我们都会认真倾听")}</p>
+                  <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-800">{t("使用者评论反馈")}</h3>
+                  <p className="text-xs text-slate-400 font-sans tracking-wider mt-1">{t("每一条建议我们都会认真倾听")}</p>
                 </div>
               </div>
             </div>
@@ -229,11 +229,11 @@ export default function Donate() {
                 </p>
               )}
               <div className="mt-4 flex items-center justify-center gap-6">
-                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-medium">
+                 <p className="text-xs text-slate-400 font-sans">
                   {t("每人每天限2条")}
-                </div>
+                </p>
                 <div className="h-3 w-[1px] bg-slate-100" />
-                 <p className="text-[10px] text-slate-400 italic">
+                 <p className="text-xs text-slate-400 font-sans">
                   {t("恶意言论将被永久封禁 IP")}
                 </p>
               </div>
