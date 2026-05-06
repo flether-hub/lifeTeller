@@ -149,6 +149,38 @@ export const onRequest = async (context: any) => {
     }
 
     if (request.method === "POST" && path === "fortune/generate") {
+      const ip = getClientIp();
+      const cookies = request.headers.get("cookie") || '';
+      const match = cookies.match(/user_uid=([^;]+)/);
+      const userIdentifier = match ? match[1] : 'unknown';
+      const todayDate = new Date().toISOString().split("T")[0];
+
+      // 1. Server-side Quota Check
+      const limitTotal = parseInt(((await getSetting("total_daily_limit")) as string) || "100");
+      const limitIp = parseInt(((await getSetting("ip_daily_limit")) as string) || "3");
+
+      const userQuota = await env.DB.prepare(`
+        SELECT usage_count FROM quotas WHERE ip = ? AND user_identifier = ? AND quota_date = ?
+      `).bind(ip, userIdentifier, todayDate).first();
+
+      const totalQuotaRes = await env.DB.prepare(`
+        SELECT SUM(usage_count) as total FROM quotas WHERE quota_date = ?
+      `).bind(todayDate).first();
+
+      const countTotal = (totalQuotaRes?.total as number) || 0;
+      const countIp = (userQuota?.usage_count as number) || 0;
+
+      if (countTotal >= limitTotal) return errorResponse("今日全站算力额度已耗尽，请明早重试", 429);
+      if (countIp >= limitIp) return errorResponse("您今日的测算额度已用完，请明早重试", 429);
+
+      // 2. Real-time Deduction
+      await env.DB.prepare(`
+        INSERT INTO quotas (ip, user_identifier, quota_date, usage_count, comment_count)
+        VALUES (?, ?, ?, 1, 0)
+        ON CONFLICT(ip, user_identifier, quota_date) 
+        DO UPDATE SET usage_count = usage_count + 1
+      `).bind(ip, userIdentifier, todayDate).run();
+
       const body: any = await request.json();
       const modelProvider =
         ((await getSetting("model_provider")) as string) || "gemini";
@@ -346,7 +378,6 @@ export const onRequest = async (context: any) => {
       const { results: comments } = await env.DB.prepare(`
         SELECT id, location, content, created_at, ip
         FROM comments 
-        WHERE is_deleted = 0
         ORDER BY created_at DESC 
         LIMIT 10
       `).all();
@@ -431,18 +462,10 @@ export const onRequest = async (context: any) => {
         }
       } catch (e) {}
 
-      await env.DB.batch([
-        env.DB.prepare(`
-          INSERT INTO readings (ip, ip_location, lat, lon, name, gender, calendar_type, birth_date, birth_time, province, result_json)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(ip, ip_location, lat, lon, body.name, body.gender, body.calendar_type, body.date, body.time, body.province, JSON.stringify(body.resultJson)),
-        env.DB.prepare(`
-          INSERT INTO quotas (ip, user_identifier, quota_date, usage_count, comment_count)
-          VALUES (?, ?, ?, 1, 0)
-          ON CONFLICT(ip, user_identifier, quota_date) 
-          DO UPDATE SET usage_count = usage_count + 1
-        `).bind(ip, userIdentifier, todayDate)
-      ]);
+      await env.DB.prepare(`
+        INSERT INTO readings (ip, ip_location, lat, lon, name, gender, calendar_type, birth_date, birth_time, province, result_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(ip, ip_location, lat, lon, body.name, body.gender, body.calendar_type, body.date, body.time, body.province, JSON.stringify(body.resultJson)).run();
 
       return jsonResponse({ success: true });
     }
@@ -475,9 +498,17 @@ export const onRequest = async (context: any) => {
         return jsonResponse(comments || []);
       }
 
+      if (request.method === "POST" && path === "admin/comments/batch-delete") {
+        const { ids } = await request.json() as any;
+        if (!Array.isArray(ids) || ids.length === 0) return errorResponse("无效的ID列表");
+        const stmts = ids.map(id => env.DB.prepare("DELETE FROM comments WHERE id = ?").bind(id));
+        await env.DB.batch(stmts);
+        return jsonResponse({ success: true, count: ids.length });
+      }
+
       if (request.method === "DELETE" && path.startsWith("admin/comments/")) {
         const id = path.split("/")[2];
-        await env.DB.prepare('UPDATE comments SET is_deleted = 1 WHERE id = ?').bind(id).run();
+        await env.DB.prepare('DELETE FROM comments WHERE id = ?').bind(id).run();
         return jsonResponse({ success: true });
       }
 
@@ -546,6 +577,14 @@ export const onRequest = async (context: any) => {
         });
         await env.DB.batch(stmts);
         return jsonResponse({ success: true });
+      }
+
+      if (request.method === "POST" && path === "admin/readings/batch-delete") {
+        const { ids } = await request.json() as any;
+        if (!Array.isArray(ids) || ids.length === 0) return errorResponse("无效的ID列表");
+        const stmts = ids.map(id => env.DB.prepare("DELETE FROM readings WHERE id = ?").bind(id));
+        await env.DB.batch(stmts);
+        return jsonResponse({ success: true, count: ids.length });
       }
 
       if (request.method === "DELETE" && path.startsWith("admin/readings/")) {

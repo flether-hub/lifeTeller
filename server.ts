@@ -285,7 +285,6 @@ try {
       const comments = db.prepare(`
         SELECT id, location, content, created_at, ip
         FROM comments 
-        WHERE is_deleted = 0
         ORDER BY created_at DESC 
         LIMIT 10
       `).all();
@@ -315,7 +314,7 @@ try {
 
   app.get('/api/admin/comments', authenticateAdmin, (req, res) => {
     try {
-      const comments = db.prepare('SELECT * FROM comments WHERE is_deleted = 0 ORDER BY created_at DESC').all();
+      const comments = db.prepare('SELECT * FROM comments ORDER BY created_at DESC').all();
       res.json(comments);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -343,7 +342,7 @@ try {
 
   app.delete('/api/admin/comments/:id', authenticateAdmin, (req, res) => {
     try {
-      db.prepare('UPDATE comments SET is_deleted = 1 WHERE id = ?').run(req.params.id);
+      db.prepare('DELETE FROM comments WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -354,10 +353,10 @@ try {
     try {
       const { ids } = req.body;
       if (!Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ error: '无效的任务ID列表' });
+        return res.status(400).json({ error: '无效的评论ID列表' });
       }
 
-      const stmt = db.prepare('UPDATE comments SET is_deleted = 1 WHERE id = ?');
+      const stmt = db.prepare('DELETE FROM comments WHERE id = ?');
       const deleteMany = db.transaction((commentIds) => {
         for (const id of commentIds) stmt.run(id);
       });
