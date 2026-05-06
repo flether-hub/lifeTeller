@@ -8,13 +8,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  Marker,
-  ZoomableGroup,
-} from "react-simple-maps";
-import {
   LogOut,
   Settings,
   List,
@@ -29,6 +22,7 @@ import {
   MessageSquare,
   ShieldX,
   Shield,
+  Globe,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link, useNavigate } from "react-router-dom";
@@ -43,7 +37,7 @@ export default function Admin() {
   const [token, setToken] = useState(localStorage.getItem("admin_token") || "");
   const [password, setPassword] = useState("");
   const [activeTab, setActiveTab] = useState<"readings" | "map" | "settings" | "moderation">(
-    "readings",
+    "settings",
   );
 
   useEffect(() => {
@@ -453,6 +447,13 @@ export default function Admin() {
           </div>
           <nav className="flex-none flex flex-row overflow-x-auto md:flex-col md:flex-1 p-2 md:p-4 gap-2 md:gap-0 md:space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <button
+              onClick={() => setActiveTab("settings")}
+              className={`flex-1 shrink-0 md:flex-none md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === "settings" ? "bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent" : "bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50"}`}
+            >
+              <Settings size={20} className="shrink-0" />{" "}
+              <span className="hidden md:inline">系统设置</span>
+            </button>
+            <button
               onClick={() => setActiveTab("readings")}
               className={`flex-1 shrink-0 md:flex-none md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === "readings" ? "bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent" : "bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50"}`}
             >
@@ -465,13 +466,6 @@ export default function Admin() {
             >
               <MapIcon size={20} className="shrink-0" />{" "}
               <span className="hidden md:inline">来源分布</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`flex-1 shrink-0 md:flex-none md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-4 py-3 rounded-xl transition whitespace-nowrap ${activeTab === "settings" ? "bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm md:shadow-none md:border-transparent" : "bg-slate-50 md:bg-transparent text-slate-500 hover:bg-slate-100 md:hover:bg-slate-50"}`}
-            >
-              <Settings size={20} className="shrink-0" />{" "}
-              <span className="hidden md:inline">系统设置</span>
             </button>
             <button
               onClick={() => setActiveTab("moderation")}
@@ -625,71 +619,74 @@ export default function Admin() {
 
           {activeTab === "map" && (
             <div className="h-full flex flex-col">
-              <h2 className="text-2xl font-serif text-blue-800 font-bold mb-6 shrink-0">
-                用户来源地理分布
-              </h2>
-              <div className="bg-slate-50 p-6 rounded-xl border border-blue-100 shadow-sm flex-1 relative overflow-hidden flex items-center justify-center min-h-[500px]">
-                <ComposableMap
-                  projection="geoMercator"
-                  className="w-full h-full max-h-[600px]"
-                >
-                  <ZoomableGroup
-                    zoom={1}
-                    center={[104, 35]}
-                    minZoom={1}
-                    maxZoom={10}
-                  >
-                    <Geographies geography="https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json">
-                      {({ geographies }) =>
-                        geographies.map((geo) => (
-                          <Geography
-                            key={geo.rsmKey}
-                            geography={geo}
-                            fill="#cbd5e1"
-                            stroke="#f8fafc"
-                            strokeWidth={0.5}
-                            style={{
-                              default: { outline: "none" },
-                              hover: { outline: "none", fill: "#94a3b8" },
-                              pressed: { outline: "none" },
-                            }}
-                          />
-                        ))
-                      }
-                    </Geographies>
-                    {mapData.points?.map((loc: any, i: number) => {
-                      return (
-                        <Marker key={i} coordinates={[loc.lon, loc.lat]}>
-                          <g transform="translate(-8, -20)">
-                            <path
-                              d="M12 14v4M8 18h8M12 14C8.686 14 6 16.239 6 19v1h12v-1c0-2.761-2.686-5-6-5z"
-                              fill="#4f46e5"
-                              stroke="#4f46e5"
-                              strokeWidth="1"
-                              strokeLinejoin="round"
-                            />
-                            <circle cx="12" cy="8" r="4" fill="#4f46e5" />
-                          </g>
-                          <text
-                            textAnchor="middle"
-                            y={-22}
-                            style={{
-                              fill: "#0f172a",
-                              fontSize: "10px",
-                              fontWeight: "bold",
-                              pointerEvents: "none",
-                              textShadow:
-                                "1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff",
-                            }}
-                          >
-                            {loc.ip_location}
-                            {loc.count ? ` (${loc.count})` : ""}
-                          </text>
-                        </Marker>
-                      );
-                    })}
-                  </ZoomableGroup>
-                </ComposableMap>
+              <div className="flex items-center justify-between mb-6 shrink-0">
+                <h2 className="text-2xl font-serif text-blue-800 font-bold">
+                  用户来源地理分布
+                </h2>
+                <div className="text-sm text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                  共计 {mapData.points?.length || 0} 个区域
+                </div>
+              </div>
+              <div className="bg-white rounded-xl overflow-y-auto border border-blue-100 shadow-sm flex-1 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
+                <table className="w-full text-left min-w-[500px]">
+                  <thead className="bg-slate-50 border-b border-blue-100 sticky top-0 z-10">
+                    <tr>
+                      <th className="p-4 font-medium text-slate-600">地域 (Location)</th>
+                      <th className="p-4 font-medium text-slate-600 text-center">累计访问次数 (Count)</th>
+                      <th className="p-4 font-medium text-slate-600 text-right">占比</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-blue-50">
+                    {(() => {
+                      const totalCount = mapData.points?.reduce((acc: number, curr: any) => acc + (curr.count || 1), 0) || 1;
+                      const sortedPoints = [...(mapData.points || [])].sort((a, b) => (b.count || 0) - (a.count || 0));
+                      
+                      return sortedPoints.map((loc: any, i: number) => {
+                        const percent = (((loc.count || 1) / totalCount) * 100).toFixed(1);
+                        return (
+                          <tr key={i} className="hover:bg-slate-50 transition group">
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${i < 3 ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500'}`}>
+                                  {i + 1}
+                                </span>
+                                <span className="font-medium text-slate-800">
+                                  {loc.ip_location || "未知"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="p-4 text-center">
+                              <span className="bg-blue-50 text-blue-700 px-4 py-1 rounded-full text-sm font-bold border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                                {loc.count || 1}
+                              </span>
+                            </td>
+                            <td className="p-4 text-right">
+                              <div className="flex items-center justify-end gap-3">
+                                <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden shrink-0 hidden sm:block">
+                                  <div 
+                                    className="h-full bg-blue-500 rounded-full" 
+                                    style={{ width: `${percent}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm font-mono text-slate-500 w-12 text-right">
+                                  {percent}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
+                    {(!mapData.points || mapData.points.length === 0) && (
+                      <tr>
+                        <td colSpan={3} className="p-12 text-center text-slate-400">
+                          <Globe size={48} className="mx-auto mb-4 opacity-10" />
+                          <p>暂无地区访问分布统计数据</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

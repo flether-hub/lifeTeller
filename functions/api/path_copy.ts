@@ -52,6 +52,15 @@ export const onRequest = async (context: any) => {
   const getClientIp = () =>
     request.headers.get("cf-connecting-ip") || "127.0.0.1";
 
+  const getTodayBeijing = () => {
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date()).replace(/\//g, '-');
+  };
+
   async function initDatabase() {
     await env.DB.batch([
       env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`),
@@ -189,7 +198,7 @@ export const onRequest = async (context: any) => {
                 },
                 body: JSON.stringify({
                   model: aliyunModelId,
-                  messages: [{ role: "user", content: `Today is ${new Date().toISOString().split("T")[0]}. ${body.prompt}` }],
+                  messages: [{ role: "user", content: `Today is ${getTodayBeijing()}. ${body.prompt}` }],
                   stream: true,
                 }),
               },
@@ -264,7 +273,7 @@ export const onRequest = async (context: any) => {
         let stream;
         try {
           const geminiModelId = ((await getSetting("gemini_model_id")) as string) || "gemini-2.0-flash";
-          const today = new Date().toISOString().split("T")[0];
+          const today = getTodayBeijing();
           stream = await ai.models.generateContentStream({
             model: geminiModelId,
             contents: `Today is ${today}. ${body.prompt}`,
@@ -416,7 +425,7 @@ export const onRequest = async (context: any) => {
       const cookies = request.headers.get("cookie") || '';
       const match = cookies.match(/user_uid=([^;]+)/);
       const userIdentifier = match ? match[1] : 'unknown';
-      const todayDate = new Date().toISOString().split("T")[0];
+      const todayDate = getTodayBeijing();
 
       let ip_location = body.province;
       let lat = 0;
