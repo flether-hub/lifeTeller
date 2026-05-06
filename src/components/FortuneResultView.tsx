@@ -24,43 +24,6 @@ import {
   Waves,
 } from "lucide-react";
 
-const LUCKY_COLORS_CONFIG: Record<string, { bg: string; text: string; border: string }> = {
-  "红": { bg: "bg-red-50", text: "text-red-600", border: "border-red-100" },
-  "紫": { bg: "bg-purple-50", text: "text-purple-600", border: "border-purple-100" },
-  "粉": { bg: "bg-pink-50", text: "text-pink-600", border: "border-pink-100" },
-  "蓝": { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-100" },
-  "黑": { bg: "bg-slate-900", text: "text-white", border: "border-slate-900" },
-  "银": { bg: "bg-slate-100", text: "text-slate-600", border: "border-slate-200" },
-  "白": { bg: "bg-white", text: "text-slate-400", border: "border-slate-200" },
-  "米": { bg: "bg-stone-100", text: "text-stone-600", border: "border-stone-200" },
-  "金": { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-200" },
-  "黄": { bg: "bg-yellow-50", text: "text-yellow-600", border: "border-yellow-100" },
-  "青": { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100" },
-  "绿": { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100" },
-  "翠": { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100" },
-  "橙": { bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-100" },
-  "灰": { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
-  "棕": { bg: "bg-[#8B4513]/10", text: "text-[#8B4513]", border: "border-[#8B4513]/20" },
-  "褐": { bg: "bg-[#8B4513]/10", text: "text-[#8B4513]", border: "border-[#8B4513]/20" },
-  "咖": { bg: "bg-[#8B4513]/10", text: "text-[#8B4513]", border: "border-[#8B4513]/20" },
-  "桃": { bg: "bg-rose-50", text: "text-rose-500", border: "border-rose-100" },
-  "墨": { bg: "bg-slate-800", text: "text-white", border: "border-slate-800" },
-  "藏": { bg: "bg-indigo-900", text: "text-white", border: "border-indigo-900" },
-  "碧": { bg: "bg-teal-50", text: "text-teal-600", border: "border-teal-100" },
-  "琥": { bg: "bg-amber-50", text: "text-amber-600", border: "border-amber-100" },
-  "檀": { bg: "bg-red-900/10", text: "text-red-900", border: "border-red-900/20" },
-  "黛": { bg: "bg-cyan-900/10", text: "text-cyan-950", border: "border-cyan-900/20" },
-  "玫": { bg: "bg-rose-50", text: "text-rose-600", border: "border-rose-100" },
-  "杏": { bg: "bg-orange-50", text: "text-orange-500", border: "border-orange-100" },
-  "藕": { bg: "bg-pink-50", text: "text-pink-400", border: "border-pink-100" },
-  "驼": { bg: "bg-orange-100/50", text: "text-orange-900", border: "border-orange-200" },
-  "栗": { bg: "bg-amber-900/10", text: "text-amber-900", border: "border-amber-900/20" },
-  "绛": { bg: "bg-red-100", text: "text-red-900", border: "border-red-200" },
-  "绯": { bg: "bg-red-50", text: "text-red-500", border: "border-red-100" },
-  "莹": { bg: "bg-sky-50/50", text: "text-sky-600", border: "border-sky-100" },
-  "皎": { bg: "bg-slate-50", text: "text-slate-400", border: "border-slate-200" },
-};
-
 function LuckyVisual({
   numbers,
   colors,
@@ -104,14 +67,51 @@ function LuckyVisual({
     };
   };
 
-  const getColorClasses = (colorName: string) => {
+  const getColorBgStyle = (colorName: string) => {
     const name = colorName || "";
-    for (const key in LUCKY_COLORS_CONFIG) {
-      if (name.includes(key)) {
-        const config = LUCKY_COLORS_CONFIG[key];
-        return `${config.bg} ${config.text} ${config.border}`;
-      }
-    }
+    // 红色系
+    if (name.includes("红") || name.includes("朱") || name.includes("绛") || name.includes("彤") || name.includes("绯") || name.includes("赤") || name.includes("丹")) 
+      return "bg-red-50 text-red-600 border-red-100";
+    // 紫色系
+    if (name.includes("紫") || name.includes("靛")) 
+      return "bg-purple-50 text-purple-600 border-purple-100";
+    // 粉色系
+    if (name.includes("粉")) 
+      return "bg-pink-50 text-pink-600 border-pink-100";
+    // 蓝色系
+    if (name.includes("蓝") || name.includes("蔚") || name.includes("黛")) 
+      return "bg-blue-50 text-blue-600 border-blue-100";
+    // 黑色系
+    if (name.includes("黑") || name.includes("玄") || name.includes("墨") || name.includes("乌") || name.includes("冥")) 
+      return "bg-slate-900 text-white border-slate-900";
+    // 银色系
+    if (name.includes("银") || name.includes("素")) 
+      return "bg-slate-100 text-slate-600 border-slate-200";
+    // 白色系
+    if (name.includes("白") || name.includes("洁")) 
+      return "bg-white text-slate-400 border-slate-200";
+    // 米色/大地色系
+    if (name.includes("米") || name.includes("驼")) 
+      return "bg-stone-100 text-stone-600 border-stone-200";
+    // 金色系
+    if (name.includes("金")) 
+      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+    // 黄色系
+    if (name.includes("黄") || name.includes("琥") || name.includes("珀") || name.includes("缃")) 
+      return "bg-yellow-50 text-yellow-600 border-yellow-100";
+    // 绿色/青色系
+    if (name.includes("青") || name.includes("绿") || name.includes("翠") || name.includes("碧") || name.includes("苍") || name.includes("岚")) 
+      return "bg-emerald-50 text-emerald-600 border-emerald-100";
+    // 橙色系
+    if (name.includes("橙") || name.includes("橘")) 
+      return "bg-orange-50 text-orange-600 border-orange-100";
+    // 灰色系
+    if (name.includes("灰")) 
+      return "bg-gray-100 text-gray-600 border-gray-200";
+    // 棕/褐/色系
+    if (name.includes("棕") || name.includes("褐") || name.includes("咖") || name.includes("栗")) 
+      return "bg-[#8B4513]/10 text-[#8B4513] border-[#8B4513]/20";
+    
     return "bg-slate-50 text-slate-700 border-slate-100";
   };
 
@@ -203,7 +203,7 @@ function LuckyVisual({
             {parsedColors.map((colorName, i) => (
               <div
                 key={i}
-                className={`w-16 py-1.5 text-sm font-bold font-sans rounded-lg border ${getColorClasses(colorName)} shadow-sm flex items-center justify-center`}
+                className={`w-16 py-1.5 text-sm font-bold font-sans rounded-lg border ${getColorBgStyle(colorName)} shadow-sm flex items-center justify-center`}
               >
                 {t(colorName)}
               </div>
