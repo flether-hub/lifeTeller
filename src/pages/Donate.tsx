@@ -191,7 +191,7 @@ export default function Donate() {
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-400 tabular-nums shrink-0">
                           <Clock size={10} />
-                          {new Date(comment.created_at).toLocaleDateString()}
+                          {new Date(comment.created_at).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}
                         </div>
                       </div>
                       <p className="text-[13px] sm:text-sm text-slate-700 leading-relaxed break-all font-sans">

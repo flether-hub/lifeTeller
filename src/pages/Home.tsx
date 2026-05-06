@@ -244,12 +244,12 @@ export default function Home() {
     }
 
     // 姓名合规检查：不能有英文，不能超过6个汉字，必须是纯中文
-    const trimmedName = name.trim();
+    const trimmedName = (name || "").trim();
     if (/[a-zA-Z]/.test(trimmedName)) {
       setError("缘主，姓名中不能包含英文字符，请使用中文姓名。");
       return;
     }
-    if (!/^[\u4e00-\u9fa5]+$/.test(trimmedName)) {
+    if (!trimmedName || !/^[\u4e00-\u9fa5]+$/.test(trimmedName)) {
       setError("缘主，请使用中文字符填写完整姓名。");
       return;
     }
@@ -621,7 +621,10 @@ export default function Home() {
           .toString()
           .split(/[,，、\s]+/)
           .filter(Boolean)
-          .map((c: string) => c.length > 2 ? c.substring(0, 2) : c)
+          .map((c: any) => {
+            const str = String(c || "");
+            return str.length > 2 ? str.substring(0, 2) : str;
+          })
           .slice(0, 3)
           .join(", "),
         iChingQuote: parsed.iChingQuote || "天行健，君子以自强不息。",

@@ -107,8 +107,17 @@ try {
     return match ? match[1] : 'unknown';
   };
 
+  const getTodayBeijing = () => {
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date()).replace(/\//g, '-');
+  };
+
   const getQuotas = (ip: string, userIdentifier: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayBeijing();
     
     // Ensure entry exists
     db.prepare(`
@@ -129,7 +138,7 @@ try {
   };
 
   const incrementUsage = (ip: string, userIdentifier: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayBeijing();
     // Ensure record exists before incrementing
     db.prepare(`
       INSERT OR IGNORE INTO quotas (ip, user_identifier, quota_date)
@@ -143,7 +152,7 @@ try {
   };
 
   const incrementCommentUsage = (ip: string, userIdentifier: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayBeijing();
     // Ensure record exists before incrementing
     db.prepare(`
       INSERT OR IGNORE INTO quotas (ip, user_identifier, quota_date)
@@ -418,7 +427,7 @@ try {
 
     try {
       const { prompt } = req.body;
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayBeijing();
       const fullPrompt = `Today is ${today}. ${prompt}`;
 
       const modelProviderRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('model_provider') as { value: string } | undefined;

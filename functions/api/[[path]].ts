@@ -52,6 +52,15 @@ export const onRequest = async (context: any) => {
   const getClientIp = () =>
     request.headers.get("cf-connecting-ip") || "127.0.0.1";
 
+  const getTodayBeijing = () => {
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date()).replace(/\//g, '-');
+  };
+
   async function initDatabase() {
     await env.DB.batch([
       env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`),
@@ -84,7 +93,7 @@ export const onRequest = async (context: any) => {
       const cookies = request.headers.get("cookie") || '';
       const match = cookies.match(/user_uid=([^;]+)/);
       const userIdentifier = match ? match[1] : 'unknown';
-      const todayDate = new Date().toISOString().split("T")[0];
+      const todayDate = getTodayBeijing();
 
       await env.DB.prepare(`
         INSERT INTO quotas (ip, user_identifier, quota_date, usage_count, comment_count)
@@ -121,7 +130,7 @@ export const onRequest = async (context: any) => {
       const cookies = request.headers.get("cookie") || '';
       const match = cookies.match(/user_uid=([^;]+)/);
       const userIdentifier = match ? match[1] : 'unknown';
-      const todayDate = new Date().toISOString().split("T")[0];
+      const todayDate = getTodayBeijing();
 
       await env.DB.prepare(`
         INSERT INTO quotas (ip, user_identifier, quota_date, usage_count, comment_count)
@@ -153,7 +162,7 @@ export const onRequest = async (context: any) => {
       const cookies = request.headers.get("cookie") || '';
       const match = cookies.match(/user_uid=([^;]+)/);
       const userIdentifier = match ? match[1] : 'unknown';
-      const todayDate = new Date().toISOString().split("T")[0];
+      const todayDate = getTodayBeijing();
 
       // 1. Server-side Quota Check
       const limitTotal = parseInt(((await getSetting("total_daily_limit")) as string) || "100");
@@ -221,7 +230,7 @@ export const onRequest = async (context: any) => {
                 },
                 body: JSON.stringify({
                   model: aliyunModelId,
-                  messages: [{ role: "user", content: `Today is ${new Date().toISOString().split("T")[0]}. ${body.prompt}` }],
+                  messages: [{ role: "user", content: `Today is ${getTodayBeijing()}. ${body.prompt}` }],
                   stream: true,
                 }),
               },
@@ -296,7 +305,7 @@ export const onRequest = async (context: any) => {
         let stream;
         try {
           const geminiModelId = ((await getSetting("gemini_model_id")) as string) || "gemini-2.0-flash";
-          const today = new Date().toISOString().split("T")[0];
+          const today = getTodayBeijing();
           stream = await ai.models.generateContentStream({
             model: geminiModelId,
             contents: `Today is ${today}. ${body.prompt}`,
@@ -412,7 +421,7 @@ export const onRequest = async (context: any) => {
       if (isBanned) return errorResponse('您的 IP 已被禁止评论', 403);
 
       // Simple rate limit in memory just for now, or check quotas table
-      const today = new Date().toISOString().split("T")[0];
+      const today = getTodayBeijing();
       const quota = await env.DB.prepare(`
         SELECT comment_count FROM quotas 
         WHERE ip = ? AND user_identifier = ? AND quota_date = ?
@@ -447,7 +456,7 @@ export const onRequest = async (context: any) => {
       const cookies = request.headers.get("cookie") || '';
       const match = cookies.match(/user_uid=([^;]+)/);
       const userIdentifier = match ? match[1] : 'unknown';
-      const todayDate = new Date().toISOString().split("T")[0];
+      const todayDate = getTodayBeijing();
 
       let ip_location = body.province;
       let lat = 0;

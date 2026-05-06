@@ -384,6 +384,24 @@ export default function Admin() {
     setSelectedReading(reading);
   };
 
+  const formatToBeijingTime = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "-";
+    try {
+      // Handle SQLite format (YYYY-MM-DD HH:MM:SS) by making it ISO-like
+      let normalized = dateStr;
+      if (typeof dateStr === 'string' && !dateStr.includes('T') && !dateStr.includes('Z')) {
+        normalized = dateStr.replace(' ', 'T') + 'Z';
+      }
+      return new Date(normalized).toLocaleString("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        hour12: false,
+      });
+    } catch (e) {
+      console.error("Date parse error:", e);
+      return dateStr;
+    }
+  };
+
   if (!token) {
     return (
       <div className="min-h-screen font-sans text-slate-800 flex flex-col relative overflow-x-hidden">
@@ -529,9 +547,7 @@ export default function Admin() {
                             {displayId}
                           </td>
                           <td className="p-4 text-slate-600 whitespace-nowrap">
-                            {r.created_at
-                              ? new Date(r.created_at).toLocaleString()
-                              : "-"}
+                            {formatToBeijingTime(r.created_at)}
                           </td>
                           <td className="p-4 font-medium text-blue-700 whitespace-nowrap">
                             {r.name}
@@ -739,7 +755,7 @@ export default function Admin() {
                             <p className="text-sm text-slate-600 line-clamp-2">{c.content}</p>
                           </td>
                           <td className="p-4 text-xs text-slate-400 whitespace-nowrap">
-                            {new Date(c.created_at).toLocaleString()}
+                            {formatToBeijingTime(c.created_at)}
                           </td>
                           <td className="p-4 text-right">
                             <div className="flex items-center justify-end gap-3">
@@ -784,7 +800,7 @@ export default function Admin() {
                           <td className="p-4 font-mono text-sm text-slate-800">{b.ip}</td>
                           <td className="p-4 text-sm text-slate-600">{b.reason}</td>
                           <td className="p-4 text-xs text-slate-400">
-                            {new Date(b.created_at).toLocaleString()}
+                            {formatToBeijingTime(b.created_at)}
                           </td>
                           <td className="p-4 text-right">
                             <button 
