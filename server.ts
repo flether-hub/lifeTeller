@@ -8,6 +8,7 @@ import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import { jwtVerify, SignJWT } from 'jose';
 import crypto from 'crypto';
+import { rateLimit } from 'express-rate-limit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +21,26 @@ console.log("Initializing server setup...");
 
 app.use(cors());
 app.use(express.json());
+
+// Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // Limit each IP to 60 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '请求过于频繁，请稍后再试' }
+});
+
+const aiGenerateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 10, // Limit each IP to 10 AI generations per 5 mins
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '操作过于频繁，请冷静片刻' }
+});
+
+app.use('/api/', apiLimiter);
+app.use('/api/fortune/generate', aiGenerateLimiter);
 
 // Initialize Database
 let db: any;
@@ -108,6 +129,12 @@ try {
 
   const incrementUsage = (ip: string, userIdentifier: string) => {
     const today = new Date().toISOString().split('T')[0];
+    // Ensure record exists before incrementing
+    db.prepare(`
+      INSERT OR IGNORE INTO quotas (ip, user_identifier, quota_date)
+      VALUES (?, ?, ?)
+    `).run(ip, userIdentifier, today);
+
     db.prepare(`
       UPDATE quotas SET usage_count = usage_count + 1
       WHERE ip = ? AND user_identifier = ? AND quota_date = ?
@@ -116,10 +143,31 @@ try {
 
   const incrementCommentUsage = (ip: string, userIdentifier: string) => {
     const today = new Date().toISOString().split('T')[0];
+    // Ensure record exists before incrementing
+    db.prepare(`
+      INSERT OR IGNORE INTO quotas (ip, user_identifier, quota_date)
+      VALUES (?, ?, ?)
+    `).run(ip, userIdentifier, today);
+
     db.prepare(`
       UPDATE quotas SET comment_count = comment_count + 1
       WHERE ip = ? AND user_identifier = ? AND quota_date = ?
     `).run(ip, userIdentifier, today);
+  };
+
+  const checkQuotaInternal = (ip: string, userIdentifier: string) => {
+    const totalDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('total_daily_limit') as any)?.value || '100';
+    const ipDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('ip_daily_limit') as any)?.value || '3';
+    
+    const limitTotal = parseInt(totalDailyLimitStr);
+    const limitIp = parseInt(ipDailyLimitStr);
+    
+    const { userUsage, totalUsage } = getQuotas(ip, userIdentifier);
+    
+    if (totalUsage >= limitTotal) return { allowed: false, error: '今日全站算力额度已耗尽，请明早重试' };
+    if (userUsage >= limitIp) return { allowed: false, error: '您今日的测算额度已用完，请明早重试' };
+    
+    return { allowed: true };
   };
 
   // API Routes
@@ -179,19 +227,11 @@ try {
   });
 
   app.post('/api/fortune/check', (req, res) => {
-    const totalDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('total_daily_limit') as any)?.value || '100';
-    const ipDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('ip_daily_limit') as any)?.value || '3';
-    
-    const limitTotal = parseInt(totalDailyLimitStr);
-    const limitIp = parseInt(ipDailyLimitStr);
     const ip = getClientIp(req);
     const userIdentifier = getUserIdentifier(req);
+    const check = checkQuotaInternal(ip, userIdentifier);
     
-    const { userUsage, totalUsage } = getQuotas(ip, userIdentifier);
-    
-    if (totalUsage >= limitTotal) return res.status(429).json({ error: '今日全站算力额度已耗尽，请明早重试' });
-    if (userUsage >= limitIp) return res.status(429).json({ error: '您今日的测算额度已用完，请明早重试' });
-    
+    if (!check.allowed) return res.status(429).json({ error: check.error });
     res.json({ success: true });
   });
 
@@ -281,6 +321,25 @@ try {
     }
   });
 
+  app.post('/api/admin/readings/batch-delete', authenticateAdmin, (req, res) => {
+    try {
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: '无效的任务ID列表' });
+      }
+
+      const stmt = db.prepare('DELETE FROM readings WHERE id = ?');
+      const deleteMany = db.transaction((readingIds) => {
+        for (const id of readingIds) stmt.run(id);
+      });
+
+      deleteMany(ids);
+      res.json({ success: true, count: ids.length });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.delete('/api/admin/comments/:id', authenticateAdmin, (req, res) => {
     try {
       db.prepare('UPDATE comments SET is_deleted = 1 WHERE id = ?').run(req.params.id);
@@ -337,7 +396,19 @@ try {
     }
   });
 
-          app.post('/api/fortune/generate', async (req, res) => {
+  app.post('/api/fortune/generate', async (req, res) => {
+    const ip = getClientIp(req);
+    const userIdentifier = getUserIdentifier(req);
+
+    // SERVER-SIDE QUOTA CHECK
+    const check = checkQuotaInternal(ip, userIdentifier);
+    if (!check.allowed) {
+      return res.status(429).json({ error: check.error });
+    }
+
+    // REAL-TIME DEDUCTION
+    incrementUsage(ip, userIdentifier);
+
     // Set headers for streaming
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
@@ -550,10 +621,6 @@ try {
       `);
       stmt.run(ip, ip_location, lat, lon, name, gender, calendar_type, date, time, province, JSON.stringify(resultJson));
       
-      // Increment usage count
-      const userIdentifier = getUserIdentifier(req);
-      incrementUsage(ip, userIdentifier);
-
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

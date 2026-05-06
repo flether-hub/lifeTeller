@@ -1,5 +1,6 @@
 import React from "react";
 import { FortuneChart } from "./FortuneChart";
+import { useLanguage } from "../context/LanguageContext";
 import {
   Bot,
   LibraryBig,
@@ -30,6 +31,7 @@ function LuckyVisual({
   numbers?: string;
   colors?: string;
 }) {
+  const { t } = useLanguage();
   if (!numbers && !colors) return null;
 
   const parseWuXing = (text: string) => {
@@ -134,7 +136,7 @@ function LuckyVisual({
       {numbers && (
         <div className="text-left">
           <div className="flex items-center gap-2 mb-2 border-l-2 border-slate-100 pl-3">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">五行吉数</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t("五行吉数")}</span>
           </div>
           <div className="flex flex-wrap gap-4 pl-4">
             {parsedNumbers.map((group, idx) => (
@@ -156,7 +158,7 @@ function LuckyVisual({
       {colors && (
         <div className="text-left">
           <div className="flex items-center gap-2 mb-2 border-l-2 border-slate-100 pl-3">
-             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">生旺颜色</span>
+             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t("生旺颜色")}</span>
           </div>
           <div className="flex flex-wrap gap-x-2 gap-y-2 pl-4">
             {colors
@@ -170,7 +172,7 @@ function LuckyVisual({
                     key={i}
                     className={`px-3 py-1 text-sm font-bold font-sans rounded-md border ${getColorBgStyle(colorName)} shadow-sm`}
                   >
-                    {colorName}
+                    {t(colorName)}
                   </div>
                 );
               })}
@@ -209,6 +211,7 @@ function YinYangIcon({ className }: { className?: string }) {
 }
 
 function BaZiVisual({ bazi }: { bazi: any[] }) {
+  const { t } = useLanguage();
   if (!bazi || !Array.isArray(bazi) || bazi.length === 0) return null;
 
   return (
@@ -217,16 +220,16 @@ function BaZiVisual({ bazi }: { bazi: any[] }) {
         {/* Traditional reading: Hour, Day, Month, Year */}
         {bazi.map((b, i) => (
           <div key={i} className="flex flex-col items-center gap-2">
-            <span className="text-[10px] font-medium text-slate-300 tracking-widest uppercase">{b.pillar}</span>
+            <span className="text-[10px] font-medium text-slate-300 tracking-widest uppercase">{t(b.pillar)}</span>
             <div className="flex flex-col border border-slate-100 rounded-sm overflow-hidden bg-white">
               <div className="w-12 h-12 flex items-center justify-center text-xl font-serif font-bold text-slate-800 border-b border-slate-50">
-                {b.gan}
+                {t(b.gan)}
               </div>
               <div className="w-12 h-12 flex items-center justify-center text-xl font-serif font-bold text-slate-800">
-                {b.zhi}
+                {t(b.zhi)}
               </div>
             </div>
-            <span className="text-[10px] text-slate-400 font-serif opacity-70">{b.wuXing}</span>
+            <span className="text-[10px] text-slate-400 font-serif opacity-70">{t(b.wuXing)}</span>
           </div>
         ))}
       </div>
@@ -312,7 +315,7 @@ export function FortuneResultView(props: {
 }
 
 function FortuneResultViewInner({
-  result,
+  result: rawResult,
   userInfo,
 }: {
   result: any;
@@ -325,7 +328,10 @@ function FortuneResultViewInner({
     calendarType: string;
   };
 }) {
-  if (!result) return null;
+  const { t, translateObject } = useLanguage();
+  if (!rawResult) return null;
+
+  const result = translateObject(rawResult);
 
   const match = userInfo?.date?.match(/^(\d{4})/);
   let currentDecadeIndex = -1;
@@ -359,7 +365,7 @@ function FortuneResultViewInner({
       <div className="relative text-center mb-10 pb-8 border-b border-indigo-100">
         <div className="flex justify-center items-center gap-4 mb-2">
           <Bot className="w-8 h-8 text-indigo-900" />
-          <h1 className="text-3xl font-serif font-bold tracking-[0.2em] text-indigo-950">命理玄鉴</h1>
+          <h1 className="text-3xl font-serif font-bold tracking-[0.2em] text-indigo-950">{t("命理玄鉴")}</h1>
           <YinYangIcon className="w-8 h-8 text-indigo-900" />
         </div>
         <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 mx-auto rounded-full mt-4" />
@@ -367,16 +373,16 @@ function FortuneResultViewInner({
         {userInfo && (
           <div className="mt-8 flex justify-center gap-10 text-xs text-indigo-800 font-serif">
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">缘主</span>
-              <span className="font-bold text-indigo-950 text-sm">{userInfo.name}（{userInfo.gender}）</span>
+              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">{t("缘主")}</span>
+              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.name)}（{t(userInfo.gender)}）</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">生辰</span>
-              <span className="font-bold text-indigo-950 text-sm">{userInfo.calendarType} {userInfo.date} {userInfo.time}</span>
+              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">{t("生辰")}</span>
+              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.calendarType)} {userInfo.date} {t(userInfo.time)}</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">出生地</span>
-              <span className="font-bold text-indigo-950 text-sm">{userInfo.province}</span>
+              <span className="text-[9px] uppercase text-indigo-400 tracking-widest mb-1">{t("出生地")}</span>
+              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.province)}</span>
             </div>
           </div>
         )}
@@ -391,21 +397,21 @@ function FortuneResultViewInner({
 
       <div className="space-y-10">
         {result.nameLocationAnalysis && (
-          <Section title="姓名与方位渊源" icon={<MapPin className="w-5 h-5" />}>
+          <Section title={t("姓名与方位渊源")} icon={<MapPin className="w-5 h-5" />}>
             <p className="text-[14px] leading-[1.8] text-slate-600 whitespace-pre-line text-justify">
               {sanitizeContent(result.nameLocationAnalysis)}
             </p>
           </Section>
         )}
 
-        <Section title="八字总评" icon={<LibraryBig className="w-5 h-5" />}>
+        <Section title={t("八字总评")} icon={<LibraryBig className="w-5 h-5" />}>
           <p className="text-[14px] leading-[1.8] text-slate-700 whitespace-pre-line text-justify font-medium">
             {sanitizeContent(result.summary)}
           </p>
         </Section>
 
         {result.recent && (
-          <Section title="未来3年运势" icon={<Sparkles className="w-5 h-5" />}>
+          <Section title={t("未来3年运势")} icon={<Sparkles className="w-5 h-5" />}>
             <p className="text-[14px] leading-[1.8] text-slate-600 whitespace-pre-line text-justify">
               {sanitizeContent(result.recent)}
             </p>
@@ -415,15 +421,15 @@ function FortuneResultViewInner({
 
       {/* 四柱细批 */}
       <div className="grid grid-cols-2 gap-x-12 gap-y-10 border-t border-slate-100 mt-12 pt-10 break-inside-avoid">
-        <ResultCard title="事业与学业" icon={<Briefcase className="w-5 h-5" />} content={result.career} />
-        <ResultCard title="财富与金钱" icon={<Coins className="w-5 h-5" />} content={result.wealth} />
-        <ResultCard title="家庭与六亲" icon={<Heart className="w-5 h-5" />} content={result.family} />
-        <ResultCard title="健康与寿考" icon={<Activity className="w-5 h-5" />} content={result.health} />
+        <ResultCard title={t("事业与学业")} icon={<Briefcase className="w-5 h-5" />} content={result.career} />
+        <ResultCard title={t("财富与金钱")} icon={<Coins className="w-5 h-5" />} content={result.wealth} />
+        <ResultCard title={t("家庭与六亲")} icon={<Heart className="w-5 h-5" />} content={result.family} />
+        <ResultCard title={t("健康与寿考")} icon={<Activity className="w-5 h-5" />} content={result.health} />
       </div>
 
       {/* 图表区域 */}
       <div className="mt-12 pt-10 border-t border-slate-100 break-inside-avoid print:break-before-page">
-        <Section title="一生天命走势图" icon={<TrendingUp className="w-5 h-5" />}>
+        <Section title={t("一生天命走势图")} icon={<TrendingUp className="w-5 h-5" />}>
           <div className="mt-4">
             <FortuneChart decades={result.decades} birthDate={userInfo?.date} />
           </div>
@@ -433,7 +439,7 @@ function FortuneResultViewInner({
       {/* 大运时间轴 */}
       {result.decades && result.decades.length > 0 && (
         <div className="mt-12 pt-10 border-t border-slate-100">
-          <Section title="大运流转 (十年一运)" icon={<History className="w-5 h-5" />}>
+          <Section title={t("大运流转 (十年一运)")} icon={<History className="w-5 h-5" />}>
             <div className="mt-6 grid grid-cols-1 gap-4">
               {result.decades.map((decade: any, idx: number) => {
                 const isCurrent = idx === currentDecadeIndex;
@@ -456,10 +462,10 @@ function FortuneResultViewInner({
       {/* 页脚 - 易经箴言在此显示 */}
       <div className="mt-16 pt-12 border-t border-slate-900/10 text-center flex flex-col items-center">
         <div className="mb-4 flex flex-col items-center gap-1">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">易经箴言</span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t("易经箴言")}</span>
         </div>
         <p className="text-base font-sans font-bold text-slate-600 mb-8 max-w-lg leading-relaxed text-center px-4">
-          "{result.iChingQuote || "天数难测，唯德报之"}"
+          "{result.iChingQuote || t("天数难测，唯德报之")}"
         </p>
         <div className="flex flex-col items-center gap-1 opacity-20 hover:opacity-40 transition-opacity pb-12">
           <div className="flex items-center gap-2">

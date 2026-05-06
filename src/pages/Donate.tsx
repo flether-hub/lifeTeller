@@ -5,6 +5,7 @@ import { Heart, X, MessageSquare, Send, MapPin, User, Clock } from 'lucide-react
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface Comment {
   id: number;
@@ -21,6 +22,7 @@ export default function Donate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Set user_uid cookie if not exists
@@ -86,7 +88,7 @@ export default function Donate() {
           <button 
             onClick={() => navigate('/')} 
             className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors p-2 bg-slate-100/50 hover:bg-slate-200 rounded-full z-20"
-            title="关闭"
+            title={t("关闭")}
           >
             <X size={20} />
           </button>
@@ -97,19 +99,19 @@ export default function Donate() {
               <Heart size={32} className="text-rose-500 animate-pulse" />
             </div>
             
-            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-800 mb-4">支持我们的发展</h2>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-800 mb-4">{t("支持我们的发展")}</h2>
             
             <p className="text-sm sm:text-base text-slate-600 mb-8 leading-relaxed px-2">
-              感谢您使用 <strong className="font-bold text-slate-800">lifeTeller</strong>。本站算力与存储均自费承担。打赏将全额用于抵扣成本，助力项目长存。愿您平安喜乐！
+              {t("感谢您使用")} <strong className="font-bold text-slate-800">lifeTeller</strong>。{t("本站算力与存储均自费承担。打赏将全额用于抵扣成本，助力项目长存。愿您平安喜乐！")}
             </p>
 
             <div className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center">
-              <h3 className="text-sm sm:text-base font-medium text-slate-700 mb-6 font-serif">微信扫码赞助</h3>
+              <h3 className="text-sm sm:text-base font-medium text-slate-700 mb-6 font-serif">{t("微信扫码赞助")}</h3>
               
               <div id="qr-code-container" className="w-[200px] h-[200px] bg-white rounded-xl flex flex-col items-center justify-center overflow-hidden relative mb-6 shadow-sm border border-slate-100">
                 <img 
                   src="/payment.jpg"
-                  alt="微信助力二维码" 
+                  alt={t("微信助力二维码")} 
                   className="w-full h-full object-contain p-2" 
                 />
               </div>
@@ -132,17 +134,17 @@ export default function Donate() {
                     a.click();
                   } catch (e) {
                     console.error('Failed to save QR code', e);
-                    alert('保存失败，请重试');
+                    alert(t('保存失败，请重试'));
                   }
                 }}
                 className="text-sm px-6 py-2.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition font-medium tracking-wide shadow-sm mt-2 active:scale-95"
               >
-                保存收款码为图片
+                {t("保存收款码为图片")}
               </button>
             </div>
             
             <div className="mt-auto pt-8 text-xs text-slate-400">
-               您的每一分心意，都是我们继续前行的动力
+               {t("您的每一分心意，都是我们继续前行的动力")}
             </div>
           </div>
 
@@ -154,11 +156,10 @@ export default function Donate() {
                   <MessageSquare size={22} />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-800">用户评论反馈</h3>
-                  <p className="text-[10px] text-slate-400 font-sans tracking-wider mt-1">每一条建议我们都会认真倾听</p>
+                  <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-800">{t("用户评论反馈")}</h3>
+                  <p className="text-[10px] text-slate-400 font-sans tracking-wider mt-1">{t("每一条建议我们都会认真倾听")}</p>
                 </div>
               </div>
-              <span className="text-[10px] font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md sm:ml-auto self-start sm:self-center">每人每天限2条</span>
             </div>
 
             {/* Comment List */}
@@ -166,7 +167,7 @@ export default function Donate() {
               <AnimatePresence mode="popLayout">
                 {comments.length === 0 ? (
                   <div className="text-center py-20 text-slate-400 text-sm italic">
-                    暂无评论，留下您的第一条足迹吧
+                    {t("暂无评论，留下您的第一条足迹吧")}
                   </div>
                 ) : (
                   comments.map((comment) => (
@@ -185,7 +186,7 @@ export default function Donate() {
                           </div>
                           <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 rounded-full text-blue-600 shrink-0 max-w-[120px] sm:max-w-none">
                             <MapPin size={10} className="text-blue-400 shrink-0" />
-                            <span className="truncate">{comment.location}</span>
+                            <span className="truncate">{t(comment.location)}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-400 tabular-nums shrink-0">
@@ -194,7 +195,7 @@ export default function Donate() {
                         </div>
                       </div>
                       <p className="text-[13px] sm:text-sm text-slate-700 leading-relaxed break-all font-sans">
-                        {comment.content}
+                        {t(comment.content)}
                       </p>
                     </motion.div>
                   ))
@@ -208,7 +209,7 @@ export default function Donate() {
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="说点什么吧... (在这里留下您的愿望或对本站的建议)"
+                  placeholder={t("说点什么吧... (在这里留下您的愿望或对本站的建议)")}
                   className="w-full h-28 bg-slate-50 rounded-2xl border border-slate-200 p-5 text-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none resize-none placeholder:text-slate-400"
                   maxLength={500}
                   disabled={isSubmitting}
@@ -224,16 +225,16 @@ export default function Donate() {
               {error && (
                 <p className="text-xs text-rose-500 mt-2 ml-1 flex items-center gap-1.5 animate-pulse font-medium">
                   <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
-                  {error}
+                  {t(error)}
                 </p>
               )}
               <div className="mt-4 flex items-center justify-center gap-6">
-                 <p className="text-[10px] text-slate-400 italic">
-                  * 评论即时可见，无需审核
-                </p>
+                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-medium">
+                  {t("每人每天限2条")}
+                </div>
                 <div className="h-3 w-[1px] bg-slate-100" />
                  <p className="text-[10px] text-slate-400 italic">
-                  恶意言论将被永久封禁 IP
+                  {t("恶意言论将被永久封禁 IP")}
                 </p>
               </div>
             </div>

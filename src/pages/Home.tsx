@@ -23,6 +23,7 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { FortuneResultView } from "../components/FortuneResultView";
 import { useReading } from "../context/ReadingContext";
+import { useLanguage } from "../context/LanguageContext";
 
 import { generateExportData } from "../lib/exportUtils";
 
@@ -148,6 +149,7 @@ export default function Home() {
     debugLogs,
     setDebugLogs,
   } = useReading();
+  const { language, t } = useLanguage();
   const [showDebug, setShowDebug] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportReadyUrl, setExportReadyUrl] = useState<string | null>(null);
@@ -648,15 +650,13 @@ export default function Home() {
           className="text-center max-w-3xl"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-6 text-white/90 text-sm shadow-sm">
-            <Sparkles size={14} className="text-amber-400" /> AI
-            驱动易经八字推演
+            <Sparkles size={14} className="text-amber-400" /> {t("AI 驱动易经八字推演")}
           </div>
           <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mb-3 tracking-tight drop-shadow-lg">
-            天命微茫·八字探微
+            {t("天命微茫·八字探微")}
           </h1>
           <p className="text-sm md:text-base text-slate-200 font-light leading-relaxed mb-4 drop-shadow">
-            深度解析您的生辰八字，融合传统易经与现代大模型技术，
-            为您推演一生大运起伏、近期运势走向，并预测事业、财富、健康与姻缘的未来轨迹。
+            {t("深度解析您的生辰八字，融合传统易经与现代大模型技术，为您推演一生大运起伏、近期运势走向，并预测事业、财富、健康与姻缘的未来轨迹。")}
           </p>
         </motion.div>
       </div>
@@ -685,8 +685,8 @@ export default function Home() {
                     <div className="w-full md:w-1/3 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100 pb-8 md:pb-0 md:pr-8">
                       <Bagua isReading={false} />
                       <div className="mt-8 text-center text-sm text-slate-400">
-                        <p>一命二运三风水</p>
-                        <p>四积阴德五读书</p>
+                        <p>{t("一命二运三风水")}</p>
+                        <p>{t("四积阴德五读书")}</p>
                       </div>
                     </div>
 
@@ -700,7 +700,7 @@ export default function Home() {
                             </div>
                             <div className="min-w-0">
                               <p className="text-[11px] sm:text-xs font-medium text-slate-800 leading-tight">
-                                发现您有最近一次的测算记录
+                                {t("发现您有最近一次的测算记录")}
                               </p>
                             </div>
                           </div>
@@ -709,7 +709,7 @@ export default function Home() {
                             onClick={handleRestoreLastReading}
                             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white hover:bg-slate-50 text-slate-700 text-[10px] sm:text-xs font-medium rounded-xl shadow-sm border border-slate-200 transition whitespace-nowrap ml-2 sm:ml-4 shrink-0"
                           >
-                            查看报告
+                            {t("查看报告")}
                           </button>
                         </div>
                       )}
@@ -718,7 +718,7 @@ export default function Home() {
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                               <User size={16} className="text-slate-500" />{" "}
-                              阁下尊姓大名
+                              {t("阁下尊姓大名")}
                             </label>
                             <input
                               type="text"
@@ -726,14 +726,14 @@ export default function Home() {
                               value={name}
                               onChange={(e) => setName(e.target.value)}
                               className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all font-sans"
-                              placeholder="推荐真实姓名"
+                              placeholder={t("推荐真实姓名")}
                             />
                           </div>
 
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                               <MapPin size={16} className="text-slate-500" />{" "}
-                              出生省份
+                              {t("出生省份")}
                             </label>
                             <select
                               value={province}
@@ -746,7 +746,7 @@ export default function Home() {
                                   value={p}
                                   className="bg-white text-slate-800"
                                 >
-                                  {p}
+                                  {t(p)}
                                 </option>
                               ))}
                             </select>
@@ -760,7 +760,7 @@ export default function Home() {
                                 size={16}
                                 className="text-slate-500"
                               />{" "}
-                              日历类型
+                              {t("日历类型")}
                             </label>
                             <div className="flex bg-slate-50 rounded-xl p-1 border border-slate-200">
                               {["阳历", "阴历"].map((type) => (
@@ -775,7 +775,7 @@ export default function Home() {
                                       : "text-slate-500 hover:text-slate-700",
                                   )}
                                 >
-                                  {type}
+                                  {t(type)}
                                 </button>
                               ))}
                             </div>
@@ -786,14 +786,14 @@ export default function Home() {
                                 size={16}
                                 className="text-slate-500"
                               />{" "}
-                              出生日期
+                              {t("出生日期")}
                             </label>
                             <input
                               type="text"
                               required
                               value={date}
                               onChange={(e) => setDate(e.target.value)}
-                              placeholder="例如: 1990年1月1日 或 1990-01-01"
+                              placeholder={t("例如: 1990年1月1日 或 1990-01-01")}
                               className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all placeholder:text-slate-400"
                             />
                           </div>
@@ -803,20 +803,20 @@ export default function Home() {
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                               <Clock size={16} className="text-slate-500" />{" "}
-                              出生时辰
+                              {t("出生时辰")}
                             </label>
                             <select
                               value={time}
                               onChange={(e) => setTime(e.target.value)}
                               className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
                             >
-                              {SHICHEN.map((t) => (
+                              {SHICHEN.map((t_item) => (
                                 <option
-                                  key={t.value}
-                                  value={t.value}
+                                  key={t_item.value}
+                                  value={t_item.value}
                                   className="bg-white text-slate-800"
                                 >
-                                  {t.label}
+                                  {t(t_item.label)}
                                 </option>
                               ))}
                             </select>
@@ -824,7 +824,7 @@ export default function Home() {
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                               <Users size={16} className="text-slate-500" />{" "}
-                              性别
+                              {t("性别")}
                             </label>
                             <div className="flex bg-slate-50 rounded-xl p-1 border border-slate-200 mt-[2px] h-[48px] items-center">
                               {["男", "女"].map((g) => (
@@ -839,7 +839,7 @@ export default function Home() {
                                       : "text-slate-500 hover:text-slate-700",
                                   )}
                                 >
-                                  {g}
+                                  {t(g)}
                                 </button>
                               ))}
                             </div>
@@ -850,7 +850,7 @@ export default function Home() {
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                               <Sparkles size={16} className="text-slate-500" />{" "}
-                              解读模式
+                              {t("解读模式")}
                             </label>
                             <select
                               value={mode}
@@ -859,7 +859,7 @@ export default function Home() {
                             >
                               {MODE_OPTIONS.map((m) => (
                                 <option key={m} value={m}>
-                                  {m}
+                                  {t(m)}
                                 </option>
                               ))}
                             </select>
@@ -871,16 +871,16 @@ export default function Home() {
                                 size={16}
                                 className="text-slate-500"
                               />{" "}
-                              解读语气
+                              {t("解读语气")}
                             </label>
                             <select
                               value={tone}
                               onChange={(e) => setTone(e.target.value)}
                               className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all appearance-none"
                             >
-                              {TONE_OPTIONS.map((t) => (
-                                <option key={t} value={t}>
-                                  {t}
+                              {TONE_OPTIONS.map((tone_item) => (
+                                <option key={tone_item} value={tone_item}>
+                                  {t(tone_item)}
                                 </option>
                               ))}
                             </select>
@@ -889,8 +889,8 @@ export default function Home() {
 
                         {error && (
                           <div className="text-rose-600 text-sm bg-rose-50 p-3 rounded-lg border border-rose-200">
-                            <span className="font-bold">⚠️ 出错提示：</span>
-                            {error}
+                            <span className="font-bold">⚠️ {t("出错提示")}：</span>
+                            {t(error)}
                           </div>
                         )}
 
@@ -903,8 +903,8 @@ export default function Home() {
                             <Sparkles size={18} className="text-amber-400" />
                             <span className="text-lg font-bold tracking-widest text-white">
                               {config && (config.ipLeft <= 0 || config.totalLeft <= 0)
-                                ? "今日额度已用完，请明日再来"
-                                : "开演八字神机"}
+                                ? t("今日额度已用完，请明日再来")
+                                : t("开演八字神机")}
                             </span>
                           </div>
                         </button>
@@ -968,10 +968,10 @@ export default function Home() {
                     <Bagua isReading={!error} />
                   </div>
                   <p className="text-xl md:text-2xl font-bold text-slate-800 mt-6 animate-pulse tracking-wide md:tracking-widest drop-shadow-sm text-center px-6 max-w-sm">
-                    {error ? "推演中断" : "正在参详天地造化，推演流年大运..."}
+                    {error ? t("推演中断") : t("正在参参天地造化，推演流年大运...")}
                   </p>
                   <p className="text-slate-500 mt-2 font-light">
-                    {error ? "天数难测，请调整后重试" : "命理玄奥，请稍候片刻"}
+                    {error ? t("天数难测，请调整后重试") : t("命理玄奥，请稍候片刻")}
                   </p>
                   {error && (
                     <button
@@ -981,7 +981,7 @@ export default function Home() {
                       }}
                       className="mt-8 px-8 py-3 bg-slate-800 text-white text-sm font-medium tracking-widest rounded-xl shadow-md hover:bg-slate-700 transition-all border border-slate-700 hover:shadow-lg"
                     >
-                      返回重试
+                      {t("返回重试")}
                     </button>
                   )}
                 </motion.div>
@@ -1011,12 +1011,12 @@ export default function Home() {
                           } catch (err) {
                             console.error(err);
                             setExportModalOpen(false);
-                            alert("导出失败，请重试");
+                            alert(t("导出失败，请重试"));
                           }
                         }}
                         className="print-hide w-full sm:w-48 justify-center text-white hover:text-white text-sm font-medium tracking-widest border border-slate-800 bg-slate-800 hover:bg-slate-700 px-8 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2"
                       >
-                        导出PDF
+                        {t("导出PDF")}
                       </button>
                       <button
                         onClick={async () => {
@@ -1033,18 +1033,18 @@ export default function Home() {
                           } catch (err) {
                             console.error(err);
                             setExportModalOpen(false);
-                            alert("导出失败，请重试");
+                            alert(t("导出失败，请重试"));
                           }
                         }}
                         className="print-hide w-full sm:w-48 justify-center text-slate-800 hover:text-slate-900 text-sm font-medium tracking-widest border border-slate-300 hover:bg-slate-100 px-8 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2 bg-white"
                       >
-                        导出长图
+                        {t("导出长图")}
                       </button>
                       <button
                         onClick={reset}
                         className="print-hide w-full sm:w-48 justify-center bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 text-sm font-medium tracking-widest px-8 py-3 rounded-xl transition-all flex items-center border border-slate-200 shadow-sm"
                       >
-                        返回重测
+                        {t("返回重测")}
                       </button>
                     </div>
                   </div>
@@ -1079,7 +1079,7 @@ export default function Home() {
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
                 </div>
                 <h3 className="font-bold text-slate-800 text-lg tracking-widest mx-1">
-                  行期指北
+                  {t("行期指北")}
                 </h3>
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
@@ -1099,9 +1099,9 @@ export default function Home() {
                   </span>
                   <span className="leading-relaxed">
                     <strong className="text-slate-800 font-bold mr-1">
-                      隐私承诺：
+                      {t("隐私承诺：")}
                     </strong>
-                    建议输入真实姓名和出生地。诚心敬意，方能窥见天机，报告仅暂存在您的浏览器中。
+                    {t("建议输入真实姓名和出生地。诚心敬意，方能窥见天机，报告仅暂存在您的浏览器中。")}
                   </span>
                 </div>
                 <div className="flex items-start gap-3">
@@ -1110,9 +1110,9 @@ export default function Home() {
                   </span>
                   <span className="leading-relaxed">
                     <strong className="text-slate-800 font-bold mr-1">
-                      运行建议：
+                      {t("运行建议：")}
                     </strong>
-                    将本站网址复制到系统浏览器中打开，微信直接打开不支持导出报告。
+                    {t("将本站网址复制到系统浏览器中打开，微信直接打开不支持导出报告。")}
                   </span>
                 </div>
                 <div className="flex items-start gap-3">
@@ -1121,14 +1121,14 @@ export default function Home() {
                   </span>
                   <span className="leading-relaxed">
                     <strong className="text-slate-800 font-bold mr-1">
-                      支持我们：
+                      {t("支持我们：")}
                     </strong>
-                    如果觉得算得准，欢迎对我们进行捐赠支持，以保证项目长存。
+                    {t("如果觉得算得准，欢迎对我们进行捐赠支持，以保证项目长存。")}
                     <Link
                       to="/donate"
                       className="text-red-500 font-bold hover:underline ml-1"
                     >
-                      去捐赠
+                      {t("去捐赠")}
                     </Link>
                   </span>
                 </div>
@@ -1147,13 +1147,13 @@ export default function Home() {
             className="bg-white p-8 rounded-[2rem] w-full max-w-sm flex flex-col items-center shadow-2xl border border-slate-100"
           >
             <h3 className="text-2xl font-bold mb-6 font-serif text-slate-800">
-              导出报告
+              {t("导出报告")}
             </h3>
             {!exportReadyUrl ? (
               <div className="flex flex-col items-center">
                 <Bagua isReading={true} />
                 <p className="text-slate-500 text-sm animate-pulse mt-4 mb-2">
-                  正在生成高速图片/PDF，请稍候...
+                  {t("正在生成高速图片/PDF，请稍候...")}
                 </p>
               </div>
             ) : (
@@ -1167,7 +1167,7 @@ export default function Home() {
                     }
                     className="w-full text-center text-white bg-slate-800 hover:bg-slate-700 font-bold py-3.5 rounded-xl transition-all shadow-sm tracking-widest"
                   >
-                    点击下载 PDF
+                    {t("点击下载 PDF")}
                   </a>
                 ) : (
                   <a
@@ -1178,14 +1178,14 @@ export default function Home() {
                     }
                     className="w-full text-center text-white bg-slate-800 hover:bg-slate-700 font-bold py-3.5 rounded-xl transition-all shadow-sm tracking-widest"
                   >
-                    点击保存图片
+                    {t("点击保存图片")}
                   </a>
                 )}
                 <button
                   onClick={() => setExportModalOpen(false)}
                   className="w-full text-slate-500 hover:text-slate-800 text-sm py-2 transition-colors"
                 >
-                  关闭
+                  {t("关闭")}
                 </button>
               </div>
             )}

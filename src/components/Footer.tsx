@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { AnimatedLogo } from './AnimatedLogo';
 import { useReading } from '../context/ReadingContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export function Footer() {
   const [quote, setQuote] = useState<string | null>(null);
   const { modelInfo } = useReading();
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Fetch quote from localStorage
@@ -24,12 +26,12 @@ export function Footer() {
       <div className="flex items-center justify-center gap-3 mb-4 px-6 max-w-2xl mx-auto">
         <AnimatedLogo size={28} grayscale={true} />
         {quote ? (
-          <span className="font-serif italic text-[15px] text-slate-600 leading-relaxed text-left">"{quote}"</span>
+          <span className="font-serif italic text-[15px] text-slate-600 leading-relaxed text-left">"{t(quote)}"</span>
         ) : (
           <span className="font-serif font-bold text-xl text-slate-400">lifeTeller</span>
         )}
       </div>
-      <p className="text-sm px-6">免责声明: 本程序基于传统易学文化，预测结果仅供娱乐参考，切勿过度迷信。命运掌握在自己手中。</p>
+      <p className="text-sm px-6">{t("免责声明: 本程序基于传统易学文化，预测结果仅供娱乐参考，切勿过度迷信。命运掌握在自己手中。")}</p>
       <p className="mt-3 text-sm">
         © {new Date().getFullYear()} lifeTeller. 
         {modelInfo ? (

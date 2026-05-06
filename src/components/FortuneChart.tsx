@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useLanguage } from '../context/LanguageContext';
 
 export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate?: string }) {
+  const { t } = useLanguage();
   if (!decades || !Array.isArray(decades) || decades.length === 0) return null;
 
   // Generate yearly data using cosine interpolation
@@ -68,19 +70,19 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
       <div className="absolute top-2 right-2 flex items-center gap-4 text-[11px] font-medium z-20 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-100/50 shadow-sm print:hidden">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-blue-500" />
-          <span className="text-blue-600">事业</span>
+          <span className="text-blue-600">{t("事业")}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-emerald-600">健康</span>
+          <span className="text-emerald-600">{t("健康")}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-pink-500" />
-          <span className="text-pink-600">感情</span>
+          <span className="text-pink-600">{t("感情")}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-orange-500" />
-          <span className="text-orange-600">财富</span>
+          <span className="text-orange-600">{t("财富")}</span>
         </div>
       </div>
 
@@ -112,7 +114,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
               ticks={xTicks}
               stroke="#cbd5e1" 
               tick={{fontSize: 10, fill: '#64748b'}}
-              tickFormatter={(val) => `${val}岁`}
+              tickFormatter={(val) => `${val}${t("岁")}`}
               axisLine={false}
               tickLine={false}
             />
@@ -137,12 +139,12 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
                }}
                labelStyle={{ fontWeight: 'bold', marginBottom: '8px', color: '#1e293b', fontSize: '14px' }}
                itemStyle={{ fontSize: '12px', padding: '2px 0' }}
-               formatter={(value: any) => [`${value}分`, '']}
-               labelFormatter={(label: any) => `${label}岁 运势推演`}
+               formatter={(value: any) => [`${value}${t("分")}`, '']}
+               labelFormatter={(label: any) => `${label}${t("岁")} ${t("运势推演")}`}
             />
             <Area 
               type="monotone" 
-              name="事业" 
+              name={t("事业")} 
               dataKey="career" 
               stroke="#3b82f6" 
               strokeWidth={2.5} 
@@ -154,7 +156,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
             />
             <Area 
               type="monotone" 
-              name="财富" 
+              name={t("财富")} 
               dataKey="wealth" 
               stroke="#f59e0b" 
               strokeWidth={2.5} 
@@ -166,7 +168,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
             />
             <Area 
               type="monotone" 
-              name="感情" 
+              name={t("感情")} 
               dataKey="family" 
               stroke="#ec4899" 
               strokeWidth={2.5} 
@@ -178,7 +180,7 @@ export function FortuneChart({ decades, birthDate }: { decades: any[], birthDate
             />
             <Area 
               type="monotone" 
-              name="健康" 
+              name={t("健康")} 
               dataKey="health" 
               stroke="#10b981" 
               strokeWidth={2.5} 

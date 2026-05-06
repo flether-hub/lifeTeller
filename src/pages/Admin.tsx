@@ -181,6 +181,7 @@ export default function Admin() {
       setToken(data.token);
       localStorage.setItem("admin_token", data.token);
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('admin-login-changed'));
     } else {
       setError(data.error);
     }
@@ -230,18 +231,29 @@ export default function Admin() {
 
   const handleBatchDeleteReadings = async () => {
     if (selectedReadings.size === 0) return;
+    const idsToDelete = Array.from(selectedReadings);
     setDialogConfig({
       isOpen: true,
       title: "确认批量删除？",
-      message: `确定要删除选中的 ${selectedReadings.size} 条查询记录吗？此操作不可恢复。`,
+      message: `确定要删除选中的 ${idsToDelete.length} 条查询记录吗？此操作不可恢复。`,
       type: "confirm",
       onConfirm: async () => {
         closeDialog();
-        await Promise.all(
-            Array.from(selectedReadings).map(id => fetchWithToken(`/api/admin/readings/${id}`, { method: "DELETE" }))
-        );
-        loadData();
-        setSelectedReadings(new Set());
+        try {
+          const res = await fetchWithToken("/api/admin/readings/batch-delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: idsToDelete })
+          });
+          if (res.ok) {
+            setReadings(prev => prev.filter(r => !idsToDelete.includes(r.id)));
+            setSelectedReadings(new Set());
+          }
+        } catch (e) {
+          console.error(e);
+          setMsg("批量删除失败");
+          setTimeout(() => setMsg(""), 3000);
+        }
       }
     });
   };
@@ -305,7 +317,7 @@ export default function Admin() {
             body: JSON.stringify({ ids: idsToDelete })
           });
           if (res.ok) {
-            setComments(prev => prev.filter(c => !selectedComments.has(c.id)));
+            setComments(prev => prev.filter(c => !idsToDelete.includes(c.id)));
             setSelectedComments(new Set());
           }
         } catch (error) {
