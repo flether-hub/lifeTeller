@@ -23,9 +23,9 @@ import { StarryBackground } from "../components/StarryBackground";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { FortuneResultView } from "../components/FortuneResultView";
+import { Solar, Lunar } from "lunar-javascript";
 import { useReading } from "../context/ReadingContext";
 import { useLanguage } from "../context/LanguageContext";
-
 import { generateExportData } from "../lib/exportUtils";
 
 const PROVINCES = [
@@ -304,6 +304,28 @@ export default function Home() {
     localStorage.setItem("last_province", province);
     localStorage.setItem("last_tone", tone);
     localStorage.setItem("last_mode", mode);
+    
+    // 日期转换逻辑
+    let lunarDisplayDate = date;
+    const nums = date.match(/\d+/g);
+    if (nums && nums.length >= 3) {
+      const year = parseInt(nums[0]);
+      const month = parseInt(nums[1]);
+      const day = parseInt(nums[2]);
+      try {
+        if (calendarType === "阳历") {
+          const solar = Solar.fromYmd(year, month, day);
+          const lunar = solar.getLunar();
+          lunarDisplayDate = `${lunar.getYear()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
+        } else {
+          // 如果已经是阴历且是纯数字格式，尝试转换为更有韵味的格式
+          const lunar = Lunar.fromYmd(year, month, day);
+          lunarDisplayDate = `${lunar.getYear()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
+        }
+      } catch (err) {
+        console.error("Lunar conversion error:", err);
+      }
+    }
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -334,12 +356,14 @@ export default function Home() {
         throw new Error("Rate limit exceeded");
       }
 
+      const finalTime = time || "未知";
       const prompt = `你是一位精通中国传统命理学的大师，深谙《易经》、阴阳五行、天干地支与八字命理。
-一位名叫 ${name}（性别：${gender}）的求测者，出生于【${calendarType}】${date} ${time}，出生地为【${province}】，前来寻求指点。
+一位名叫 ${name}（性别：${gender}）的求测者，出生于【阴历】${lunarDisplayDate} ${finalTime}，出生地为【${province}】，前来寻求指点。
 请严格依据传统八字命理，为他推测四柱八字并推演命运。
 
 ### 核心任务：
 1. 推算生辰八字（年、月、日、时柱，包含天干、地支、五行）。
+   - **极其重要**：如果求测者的出生时间（${finalTime}）为“未知”，则时柱的所有字段（gan, zhi, wuXing）必须填写为“未知”，不得凭空捏造。
 2. 分析姓名与出生地对运势的影响。
 3. 对流年大运进行 0 到 100 岁的十年分段评分（事业、财富、感情、健康四个维度）。
 4. 提供开运建议（幸运数字、颜色）和易经格言。
@@ -356,6 +380,7 @@ export default function Home() {
 9. **内容质量控制**：严禁在字段内容中使用未转义的双引号（"），如果内容中必须出现引号，请改用中文引号（“”）或进行转义。
 10. **数据完整性**：绝对禁止输出省略号。
 11. **输出纯净度**：不要在 JSON 之外输出任何文字，包括类似 "这里是您的报告：" 之类的开场白。
+12. **八字严谨性**：八字必须是四柱八个字，如果时辰未知，则时柱的所有字段均填“未知”。
 
 ### JSON 结构要求 (注意不要输出格式之外的注释，必须输出完整的列表数据)：
 {
@@ -637,9 +662,9 @@ export default function Home() {
         body: JSON.stringify({
           name,
           gender,
-          calendar_type: calendarType,
-          date,
-          time,
+          calendar_type: "阴历",
+          date: lunarDisplayDate,
+          time: finalTime,
           province,
           resultJson: validated,
         }),
@@ -647,7 +672,7 @@ export default function Home() {
       addLog("结果保存成功。");
 
       const lastReading = {
-        userInfo: { name, gender, date, time, province, calendarType },
+        userInfo: { name, gender, date: lunarDisplayDate, time: finalTime, province, calendarType: "阴历" },
         result: validated as FortuneResult,
       };
       try {
@@ -656,6 +681,9 @@ export default function Home() {
 
       setHasLastReading(true);
       setResult(validated as FortuneResult);
+      // 更新状态以显示农历报告
+      setDate(lunarDisplayDate);
+      setCalendarType("阴历");
       setIsReading(false);
       abortControllerRef.current = null;
 
