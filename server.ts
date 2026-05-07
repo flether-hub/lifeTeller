@@ -26,7 +26,7 @@ app.use(express.json());
 // Rate Limiting
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 60, // Limit each IP to 60 requests per windowMs
+  max: 120, // Increased limit to 120 requests per minute
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: '请求过于频繁，请稍后再试' }
@@ -42,6 +42,8 @@ const aiGenerateLimiter = rateLimit({
 
 app.use('/api/', apiLimiter);
 app.use('/api/fortune/generate', aiGenerateLimiter);
+
+app.get('/health', (req, res) => res.status(200).send('OK'));
 
 // Initialize Database
 let db: any;
@@ -220,23 +222,30 @@ try {
   });
 
   app.get('/api/config', (req, res) => {
-    const totalDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('total_daily_limit') as any)?.value || '100';
-    const ipDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('ip_daily_limit') as any)?.value || '3';
-    
-    const limitTotal = parseInt(totalDailyLimitStr);
-    const limitIp = parseInt(ipDailyLimitStr);
-    const ip = getClientIp(req);
-    const userIdentifier = getUserIdentifier(req);
-    
-    const { userUsage, totalUsage } = getQuotas(ip, userIdentifier);
+    try {
+      if (!db) return res.status(503).json({ error: 'Database initializing...' });
+      const totalDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('total_daily_limit') as any)?.value || '100';
+      const ipDailyLimitStr = (db.prepare('SELECT value FROM settings WHERE key = ?').get('ip_daily_limit') as any)?.value || '3';
+      
+      const limitTotal = parseInt(totalDailyLimitStr);
+      const limitIp = parseInt(ipDailyLimitStr);
+      const ip = getClientIp(req);
+      const userIdentifier = getUserIdentifier(req);
+      
+      const { userUsage, totalUsage } = getQuotas(ip, userIdentifier);
 
-    res.json({
-      totalLeft: Math.max(0, limitTotal - totalUsage),
-      ipLeft: Math.max(0, limitIp - userUsage)
-    });
+      res.json({
+        totalLeft: Math.max(0, limitTotal - totalUsage),
+        ipLeft: Math.max(0, limitIp - userUsage)
+      });
+    } catch (err) {
+      console.error('Error in /api/config:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   });
 
   app.post('/api/fortune/check', (req, res) => {
+    if (!db) return res.status(503).json({ error: 'Database initializing...' });
     const ip = getClientIp(req);
     const userIdentifier = getUserIdentifier(req);
     const check = checkQuotaInternal(ip, userIdentifier);
@@ -411,6 +420,7 @@ try {
   });
 
   app.post('/api/fortune/generate', async (req, res) => {
+    if (!db) return res.status(503).json({ error: 'Database initializing...' });
     const ip = getClientIp(req);
     const userIdentifier = getUserIdentifier(req);
 
@@ -543,8 +553,6 @@ try {
           stream = await ai.models.generateContentStream({
             model: geminiModelId,
             contents: fullPrompt
-          }, { 
-            signal: AbortSignal.timeout(120000) 
           });
         } catch (err: any) {
           console.error("AI API Error:", err);

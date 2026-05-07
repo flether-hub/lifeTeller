@@ -26,6 +26,7 @@ import { FortuneResultView } from "../components/FortuneResultView";
 import { Solar, Lunar } from "lunar-javascript";
 import { useReading } from "../context/ReadingContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useQuota } from "../context/QuotaContext";
 import { generateExportData } from "../lib/exportUtils";
 
 const PROVINCES = [
@@ -229,39 +230,7 @@ export default function Home() {
     }
   }, [setName, setGender, setDate, setTime, setProvince, setCalendarType, setResult, setError, setIsReading, t]);
 
-  const [config, setConfig] = useState<{ totalLeft: number, ipLeft: number } | undefined>(undefined);
-
-  const fetchConfig = useCallback(async () => {
-    try {
-      const res = await fetch("/api/config");
-      if (res.status === 429) return;
-      const text = await res.text();
-      try {
-        const data = JSON.parse(text);
-        if (data) setConfig(data);
-      } catch (e) {}
-    } catch (err) {
-      console.error("Failed to fetch config:", err);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchConfig();
-    // Refresh every 2 minutes or when tab becomes visible
-    const interval = setInterval(fetchConfig, 120000);
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchConfig();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [fetchConfig]);
+  const { config, refreshConfig: fetchConfig } = useQuota();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -682,8 +651,8 @@ export default function Home() {
         body: JSON.stringify({
           name,
           gender,
-          calendar_type: "阴历",
-          date: lunarDisplayDate,
+          calendar_type: calendarType,
+          date: date,
           time: time,
           province,
           resultJson: validated,
@@ -1079,7 +1048,7 @@ export default function Home() {
                     <Bagua isReading={!error} />
                   </div>
                   <p className="text-xl md:text-2xl font-bold text-slate-800 mt-6 animate-pulse tracking-wide md:tracking-widest drop-shadow-sm text-center px-6 max-w-sm">
-                    {error ? t("推演中断") : t("正在参参天地造化，推演流年大运...")}
+                    {error ? t("推演中断") : t("正在参悟天地造化，推演流年大运...")}
                   </p>
                   <p className="text-slate-500 mt-2 font-light">
                     {error ? t("天数难测，请调整后重试") : t("命理玄奥，请稍候片刻")}

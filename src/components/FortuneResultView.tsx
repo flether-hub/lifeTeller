@@ -405,25 +405,25 @@ function FortuneResultViewInner({
       
       <div className="relative text-center mb-10 pb-8 border-b border-indigo-100">
         <div className="flex justify-center items-center gap-4 mb-2">
-          <Bot className="w-8 h-8 text-indigo-900" />
-          <h1 className="text-3xl font-serif font-bold tracking-[0.2em] text-indigo-950">{t("命理玄鉴")}</h1>
-          <YinYangIcon className="w-8 h-8 text-indigo-900" />
+          <Bot className="w-8 h-8 shrink-0 text-indigo-900" />
+          <h1 className="text-3xl font-serif font-bold tracking-[0.2em] text-indigo-950 whitespace-nowrap shrink-0">{t("命理玄鉴")}</h1>
+          <YinYangIcon className="w-[26px] h-[26px] shrink-0 text-indigo-900" />
         </div>
-        <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 mx-auto rounded-full mt-4" />
+        <div className="h-1 w-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 mx-auto rounded-full mt-4" />
 
         {userInfo && (
-          <div className="mt-8 flex justify-center gap-10 text-xs text-indigo-800 font-serif">
+          <div className="mt-8 flex justify-center gap-4 sm:gap-10 text-xs text-indigo-800 font-serif">
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("缘主")}</span>
-              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.name || "匿名")}（{t(userInfo.gender || "未知")}）</span>
+              <span className="font-bold text-indigo-950 text-sm whitespace-nowrap">{t(userInfo.name || "匿名")}（{t(userInfo.gender || "未知")}）</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("生辰")}</span>
-              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.calendarType || "公历")} {userInfo.date || "未知日期"} {t(userInfo.time || "未知时辰")}</span>
+              <span className="font-bold text-indigo-950 text-sm whitespace-nowrap">{t(userInfo.calendarType || "公历")} {userInfo.date || "未知日期"} {t(userInfo.time || "未知时辰")}</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("出生地")}</span>
-              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.province || "未知")}</span>
+              <span className="font-bold text-indigo-950 text-sm whitespace-nowrap">{t(userInfo.province || "未知")}</span>
             </div>
           </div>
         )}
@@ -525,8 +525,8 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
     <div className="space-y-4">
       <div className="flex flex-col gap-2 border-b border-indigo-100 pb-2">
         <div className="flex items-center gap-3">
-          <div className="text-indigo-500">{icon}</div>
-          <h3 className="text-lg font-serif font-bold text-indigo-950 tracking-widest">{title}</h3>
+          <div className="text-indigo-500 shrink-0">{icon}</div>
+          <h3 className="text-lg font-serif font-bold text-indigo-950 tracking-widest whitespace-nowrap">{title}</h3>
         </div>
         <div className="h-0.5 w-16 bg-gradient-to-r from-indigo-400 to-transparent rounded-full" />
       </div>
@@ -543,8 +543,8 @@ function ResultCard({ title, icon, content }: { title: string; icon: React.React
     <div className="space-y-3">
       <div className="flex flex-col gap-2 border-b border-indigo-100 pb-2">
         <div className="flex items-center gap-3">
-          <div className="text-indigo-500">{icon}</div>
-          <h3 className="text-md font-serif font-bold text-indigo-950 tracking-wider">{title}</h3>
+          <div className="text-indigo-500 shrink-0">{icon}</div>
+          <h3 className="text-md font-serif font-bold text-indigo-950 tracking-wider whitespace-nowrap">{title}</h3>
         </div>
         <div className="h-0.5 w-16 bg-gradient-to-r from-purple-400 to-transparent rounded-full" />
       </div>

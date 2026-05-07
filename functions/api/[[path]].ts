@@ -548,12 +548,19 @@ export const onRequest = async (context: any) => {
           "SELECT COUNT(*) as count FROM readings",
         ).first();
         const { results } = await env.DB.prepare(
-          "SELECT * FROM readings ORDER BY id DESC LIMIT ? OFFSET ?",
+          "SELECT id, ip, ip_location, lat, lon, name, gender, calendar_type, birth_date, birth_time, province, created_at FROM readings ORDER BY id DESC LIMIT ? OFFSET ?",
         )
           .bind(limit, offset)
           .all();
 
         return jsonResponse({ data: results, total: countRes?.count || 0 });
+      }
+
+      if (request.method === "GET" && path.startsWith("admin/readings/")) {
+        const id = path.split("/")[2];
+        const data = await env.DB.prepare('SELECT * FROM readings WHERE id = ?').bind(id).first();
+        if (!data) return errorResponse('记录不存在', 404);
+        return jsonResponse(data);
       }
 
       if (request.method === "GET" && path === "admin/map-data") {

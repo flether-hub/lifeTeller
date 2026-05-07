@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
+import { useQuota } from '../context/QuotaContext';
 
 interface Comment {
   id: number;
@@ -16,21 +17,13 @@ interface Comment {
 }
 
 export default function Donate() {
-  const [config, setConfig] = useState<{ totalLeft: number, ipLeft: number } | undefined>(undefined);
+  const { config, refreshConfig: fetchConfig } = useQuota();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { t } = useLanguage();
-
-  const fetchConfig = async () => {
-    try {
-      const r = await fetch('/api/config');
-      const data = await r.json();
-      if (data) setConfig(data);
-    } catch (e) {}
-  };
 
   useEffect(() => {
     // Set user_uid cookie if not exists
@@ -42,7 +35,7 @@ export default function Donate() {
 
     fetchConfig();
     fetchComments();
-  }, []);
+  }, [fetchConfig]);
 
   const fetchComments = () => {
     fetch('/api/comments')
@@ -126,12 +119,11 @@ export default function Donate() {
                   const el = document.getElementById('qr-code-container');
                   if (!el) return;
                   try {
-                    const { toJpeg } = await import('html-to-image');
-                    const url = await toJpeg(el, { 
+                    const { domToJpeg } = await import('modern-screenshot');
+                    const url = await domToJpeg(el, { 
                       quality: 0.95,
-                      pixelRatio: 2,
+                      scale: 2,
                       backgroundColor: '#ffffff',
-                      skipFonts: true
                     });
                     const a = document.createElement('a');
                     a.href = url;

@@ -1,75 +1,59 @@
-# lifeTeller - AI 八字命理推演系统
+# LifeTeller - AI 易经八字推演系统
 
-这是一个基于 React + Vite + Cloudflare Pages + D1 Database 构建的 AI 八字算命应用。
+这是一个基于 React + Vite + Express (Node.js) / Cloudflare Pages + SQLite / D1 Database 构建的 AI 八字算命应用。
+
+## 📊 项目概况
+
+- **代码总量**：约 6000 行核心业务代码（前端 React 与分离服务端逻辑，含智能排版体系）。
+- **网站架构**：
+  - **前端视图 (Frontend)**：React 18 + Vite 作为运行框架，Tailwind CSS + motion 实现精致 UI 视觉与微动效，采用响应式流式布局，适配多端。
+  - **边缘/节点服务端 (Backend)**：采用两套独立的入口以适配多种部署环境：
+    - `server.ts` 配合 Better-SQLite3 用于基于容器（如 Google Cloud Run、Docker）的独立服务器模式。
+    - `functions/api/[[path]].ts` 配合 Cloudflare D1 适用于全 Serverless Edge Node 部署。
+  - **AI 枢纽 (AI Hub)**：通过 SSE (Server-Sent Events) 双向流式分块输出，直连 Google Gemini (v2.0 Flash) 或 阿里云百炼 (Qwen) 大语言模型，完成命运解析。
+  - **数据存储 (Database)**：采用 SQLite 数据库架构建立高一致性的数据关系引擎，支持额度限制、黑名单拦截、访问留痕等安全策略，确保测算数据快速、持久的读写。
 
 ## 核心特性
-- **AI 驱动**：使用 Google Gemini Pro/Flash 模型进行多维度命理推演。
-- **动态全端**：支持响应式设计，完美适配 PC 与移动端。
-- **本地存储**：测算记录支持 PDF 导出与长图保存。
-- **管理后台**：内置地理分布可视化、系统限制配置与记录管理。
+- **AI 驱动**：支持自动选择 Google Gemini 侧或阿里云百炼（Kimi/Qwen），提供极具深度、文学性和命理专业性的流式全方位推演。
+- **动态全端**：高度抛光的 UI/UX 体验设计，平滑的视觉过渡效果与排版。
+- **本地保留**：支持完整测算结果直接导出为高清 PDF / 沉浸式图文长图（Image）。
+- **聚合管控后台**：包含访问留痕、IP安全管制、全国地图空间分布热力图、资源配额动态修改。
 
-## 🚀 部署到 Cloudflare Pages (全栈 Edge 模式)
+## 🚀 部署参考与指南
 
-本程序采用前后端分离但同源部署的设计（Vite 前端 + Cloudflare Functions 后端），配合 D1 (Edge SQLite) 实现全球极速访问。
+本系统提供两种不同的部署形态。如果您使用 Google Cloud Run 等容器服务，可直接依赖 Node.js (Vite + Express)；若是全静态 Serverless 方案，则可参见保留的 Cloudflare 步骤修订版。
 
-### 1. 数据库准备 (D1 Database)
+### 方式 A：容器化部署 (推荐如 Google Cloud Run, Docker)
 
-1. **进入 Cloudflare 控制面板**：[dash.cloudflare.com](https://dash.cloudflare.com/)。
-2. **创建 D1 实例**：导航至 **Workers & Pages** -> **D1**，点击 **Create database** -> **Dashboard**。
-   - 数据库名称建议填写：`lifeteller_db`。
-3. **获取 Database ID**：创建成功后，在数据库详情页复制 **ID** (如 `00b368a2-...`)。
-4. **初始表结构**：
-   - 在 D1 详情页点击 **Console**。
-   - 复制本项目根目录下 `schema.sql` 的全部内容并执行。
+1. 配置环境变量：`GEMINI_API_KEY`, `ADMIN_PASSWORD`, `JWT_SECRET`。
+2. 构建并启动镜像，Node.js 环境直接运行 `npm run start` 即可在 `3000` 端口开启全栈服务。数据默认落盘至当前执行目录的 `lifeteller_v3.db`。
 
-### 2. 项目配置 (修改代码)
+### 方式 B：部署到 Cloudflare Pages (全栈 Edge 模式)
 
-1. **更新 wrangler.toml**：
-   - 打开根目录下的 `wrangler.toml`。
-   - 将 `database_id` 替换为你第 1 步中获取的 ID。
+*(注：原部署步骤修订保留)*
 
-### 3. 在 Cloudflare Pages 上创建项目
+本程序同时支持同源无服务器部署（Vite 前端打包预建 + Cloudflare Functions 后端执行），配合 D1 (Edge SQLite) 实现全球极速访问。
 
-1. **连接 GitHub/GitLab**：在 Pages 页面点击 **Connect to git** 并选择本仓库。
-2. **构建设置 (Build Settings)**：
-   - **Framework preset**: `Vite` (或者手动设置如下)
-   - **Build command**: `npm run build`
-   - **Build output directory**: `dist`
-3. **关键绑定 (Bindings)**：
-   - **非常重要**：在项目部署成功后（即使第一次部署失败也没关系），进入 **Settings** -> **Functions** -> **D1 database bindings**。
-   - 点击 **Add binding**。
-   - **Variable name**: 必须填写 `DB` (大写)。
-   - **D1 database**: 选择你刚刚创建的 `lifeteller_db`。
-   - **生产环境与预览环境**：建议在 Production 和 Preview 中都添加此绑定。
-4. **环境变量 (Environment Variables)**：
-   - 进入 **Settings** -> **Environment variables**。
-   - 添加 `GEMINI_API_KEY`: 填写你的 Google AI API KEY。
-   - 添加 `JWT_SECRET`: 填写一段随机字符串（用于管理员登录安全）。
-   - 添加 `ADMIN_PASSWORD`: 设置管理后台密码 (默认 admin)。
-
-### 4. 重新触发部署
-
-1. 回到 **Deployments** 页面。
-2. 在最新的部署（如果是 Failed 或 Initial）上点击 **Retry deployment**。
-3. 部署成功后，你将获得一个 `*.pages.dev` 的二级域名，即可直接访问。
+1. **数据库准备 (D1 Database)**：
+   - 进入 Cloudflare Dashboard (dash.cloudflare.com)。
+   - 导航至 **Workers & Pages** -> **D1**，选择 **Create database** -> **Dashboard** （建议名称 `lifeteller_db`）。
+   - 复制生成的 **Database ID**。在 D1 详情页 Console 执行本项目根目录下 `schema.sql` 中的所有建表语句。
+2. **项目配置更新**：打开根目录下 `wrangler.toml` 文件，将 `database_id` 替换为你获取的 ID。
+3. **在 Cloudflare Pages 创设项目**：
+   - 连接 GitHub 并在 Pages 内导入该仓库资源。
+   - 配置环境：Framework Preset = `Vite`，Build command = `npm run build`，输出目录 = `dist`。
+   - **关键绑定**：Settings -> Functions -> **D1 database bindings** -> 添加绑定 -> 名称务必填 `DB`，选中刚创建的数据库实例（请确保生产和预览均已添加）。
+   - **环境变量**：Settings -> Environment Variables -> 添加 `GEMINI_API_KEY`、`JWT_SECRET`（防伪凭证密钥）、`ADMIN_PASSWORD` (后台密码)。
+4. 重试触发最后一次部署，即可通过形如 `*.pages.dev` 的域访问系统。
 
 ---
 
-## 🛠 开发环境切换总结
+## 🛠 开发环境总结与调试
 
-- **本地开发 (NodeJS + SQLite)**: 运行 `npm run dev`，数据存储在本地 `lifeteller.db`。涉及代码为 `server.ts`。
-- **线上环境 (Edge + D1)**: 代码推送到 Git 后，由 Cloudflare API 解析 `functions/` 目录运行。涉及代码为 `functions/api/[[path]].ts`。
+- **NodeJS + 容器服务**: `npm run dev`（运行 `server.ts`）。热更新友好，前端与 API 一体化。
+- **Edge Runtime**: 服务于 Cloudflare 环境的 `functions/api/[[path]].ts`，二者业务逻辑严格对齐。
 
----
-
-## 🛠 本地开发与调试
+本地运行准备步骤：
 1. `npm install`
-2. 复制 `.env.example` 为 `.env` 并填写 `GEMINI_API_KEY`。
-3. 本地运行 (使用 Node.js + SQLite)：`npm run dev`
-4. 本地模拟 Cloudflare 环境 (可选)：使用 `npx wrangler pages dev dist`。
-
-## 技术栈
-- **Frontend**: React 18, Tailwind CSS, motion, Recharts, Lucide React
-- **Backend**: Cloudflare Pages Functions (Edge Runtime)
-- **Database**: Cloudflare D1 (SQLite on Edge)
-- **AI**: @google/genai (Gemini)
+2. 复制 `.env.example` 为 `.env` 并配置对应 Key。
+3. 执行 `npm run dev` 开始调试。

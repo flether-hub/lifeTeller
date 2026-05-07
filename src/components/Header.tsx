@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { AIOracleAnimation } from './AIOracleAnimation';
 import { AnimatedLogo } from './AnimatedLogo';
 import { useLanguage } from '../context/LanguageContext';
+import { useQuota } from '../context/QuotaContext';
 
 export function Header({ config: propConfig }: { config?: { totalLeft: number, ipLeft: number } }) {
   const location = useLocation();
   const { language, toggleLanguage, t } = useLanguage();
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => !!localStorage.getItem('admin_token'));
-  const [localConfig, setLocalConfig] = useState(propConfig);
+  const { config: contextConfig } = useQuota();
 
   useEffect(() => {
     const checkLogin = () => setIsAdminLoggedIn(!!localStorage.getItem('admin_token'));
@@ -25,28 +26,7 @@ export function Header({ config: propConfig }: { config?: { totalLeft: number, i
     };
   }, [location.pathname]);
 
-  useEffect(() => {
-    // Only fetch if propConfig is missing AND we don't have localConfig yet
-    if (!propConfig && !localConfig) {
-      // Add a small random delay to avoid thundering herd with Home.tsx
-      const timer = setTimeout(() => {
-        fetch("/api/config")
-          .then(async (res) => {
-            if (res.status === 429) return; // Silent on rate limit
-            try {
-              const data = JSON.parse(await res.text());
-              setLocalConfig(data);
-            } catch (e) {}
-          })
-          .catch(() => {});
-      }, Math.random() * 500);
-      return () => clearTimeout(timer);
-    } else if (propConfig) {
-      setLocalConfig(propConfig);
-    }
-  }, [propConfig, localConfig]);
-
-  const config = localConfig;
+  const config = propConfig || contextConfig;
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');

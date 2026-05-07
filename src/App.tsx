@@ -5,6 +5,7 @@ import Admin from './pages/Admin';
 import Donate from './pages/Donate';
 import { ReadingProvider } from './context/ReadingContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { QuotaProvider } from './context/QuotaContext';
 
 export default function App() {
   useEffect(() => {
@@ -18,15 +19,17 @@ export default function App() {
 
   return (
     <LanguageProvider>
-      <ReadingProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/admin/*" element={<Admin />} />
-            <Route path="/donate" element={<Donate />} />
-          </Routes>
-        </BrowserRouter>
-      </ReadingProvider>
+      <QuotaProvider>
+        <ReadingProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/admin/*" element={<Admin />} />
+              <Route path="/donate" element={<Donate />} />
+            </Routes>
+          </BrowserRouter>
+        </ReadingProvider>
+      </QuotaProvider>
     </LanguageProvider>
   );
 }
