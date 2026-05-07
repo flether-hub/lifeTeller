@@ -420,9 +420,6 @@ try {
       return res.status(429).json({ error: check.error });
     }
 
-    // REAL-TIME DEDUCTION
-    incrementUsage(ip, userIdentifier);
-
     // Set headers for streaming
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
@@ -434,6 +431,9 @@ try {
       const { prompt } = req.body;
       const today = getTodayBeijing();
       const fullPrompt = `Today is ${today}. ${prompt}`;
+
+      // Increment usage ONLY if we reach here (validated basic request)
+      incrementUsage(ip, userIdentifier);
 
       const modelProviderRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('model_provider') as { value: string } | undefined;
       const modelProvider = modelProviderRow?.value || 'gemini';
@@ -462,6 +462,7 @@ try {
             messages: [{ role: "user", content: fullPrompt }],
             stream: true,
           }),
+          signal: AbortSignal.timeout(120000), // 2 minutes timeout
         });
 
         if (!qwenRes.ok) {
@@ -493,7 +494,6 @@ try {
                 const parsed = JSON.parse(data);
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
-                  console.log("Chunk content:", content);
                   res.write(content);
                   if (typeof (res as any).flush === 'function') {
                     (res as any).flush();
@@ -543,6 +543,8 @@ try {
           stream = await ai.models.generateContentStream({
             model: geminiModelId,
             contents: fullPrompt
+          }, { 
+            signal: AbortSignal.timeout(120000) 
           });
         } catch (err: any) {
           console.error("AI API Error:", err);

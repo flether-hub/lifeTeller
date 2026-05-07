@@ -231,22 +231,37 @@ export default function Home() {
 
   const [config, setConfig] = useState<{ totalLeft: number, ipLeft: number } | undefined>(undefined);
 
-  useEffect(() => {
-    fetch("/api/config")
-      .then(async (res) => {
-        if (res.status === 429) return null;
-        const text = await res.text();
-        try {
-          return JSON.parse(text);
-        } catch {
-          return {};
-        }
-      })
-      .then((data) => {
+  const fetchConfig = useCallback(async () => {
+    try {
+      const res = await fetch("/api/config");
+      if (res.status === 429) return;
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
         if (data) setConfig(data);
-      })
-      .catch((err) => console.error(err));
+      } catch (e) {}
+    } catch (err) {
+      console.error("Failed to fetch config:", err);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchConfig();
+    // Refresh every 2 minutes or when tab becomes visible
+    const interval = setInterval(fetchConfig, 120000);
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchConfig();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [fetchConfig]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -343,6 +358,10 @@ export default function Home() {
         method: "POST",
         signal: abortController.signal
       });
+      
+      // Always refresh config after a check attempt (especially if it fails)
+      setTimeout(fetchConfig, 500);
+
       const checkText = await checkRes.text();
       let checkData: any = {};
       try {
@@ -692,27 +711,28 @@ export default function Home() {
     setReportUserInfo(lastReading.userInfo);
     setHasLastReading(true);
     setResult(validated as FortuneResult);
-      setIsReading(false);
-      abortControllerRef.current = null;
-
-      fetch("/api/config")
-        .then(async (r) => {
-          const text = await r.text();
-          try {
-            return JSON.parse(text);
-          } catch {
-            return {};
-          }
-        })
-        .then((d) => setConfig(d));
+    setIsReading(false);
+    abortControllerRef.current = null;
+    
+    // Refresh config after success
+    fetchConfig();
     } catch (err: any) {
       if (err.name === 'AbortError' || err.message === '推演已手动中断') {
         return; // Handled by handleStop
       }
-      setError(err.message);
+      
+      let finalErrorMessage = err.message;
+      if (err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
+        finalErrorMessage = "网络连接异常，天机受阻。请检查您的网络连接或稍后重试。";
+      }
+      
+      setError(finalErrorMessage);
       setIsReading(false);
       setShowDebug(true);
-      addLog(err.message);
+      addLog(finalErrorMessage);
+      
+      // Refresh config after failure to sync remaining counts
+      fetchConfig();
     }
   };
 

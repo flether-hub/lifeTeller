@@ -24,6 +24,14 @@ export default function Donate() {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
+  const fetchConfig = async () => {
+    try {
+      const r = await fetch('/api/config');
+      const data = await r.json();
+      if (data) setConfig(data);
+    } catch (e) {}
+  };
+
   useEffect(() => {
     // Set user_uid cookie if not exists
     const cookies = document.cookie;
@@ -32,11 +40,7 @@ export default function Donate() {
       document.cookie = `user_uid=${uid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`;
     }
 
-    fetch('/api/config')
-      .then(r => r.json())
-      .then(data => setConfig(data))
-      .catch(err => console.error(err));
-
+    fetchConfig();
     fetchComments();
   }, []);
 
@@ -65,6 +69,7 @@ export default function Donate() {
       }
       setNewComment('');
       fetchComments();
+      fetchConfig();
     } catch (err: any) {
       setError(err.message);
     } finally {
