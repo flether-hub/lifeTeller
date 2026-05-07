@@ -139,6 +139,8 @@ export default function Home() {
     () => localStorage.getItem("last_mode") || MODE_OPTIONS[0],
   );
 
+  const [reportUserInfo, setReportUserInfo] = useState<any>(null);
+
   const {
     isReading,
     setIsReading,
@@ -193,11 +195,12 @@ export default function Home() {
         if (parsed && parsed.result) {
           setName(parsed.userInfo?.name || "");
           setGender(parsed.userInfo?.gender || "男");
-          setDate(parsed.userInfo?.date || "");
+          setDate(parsed.userInfo?.rawDate || parsed.userInfo?.date || "");
           setTime(parsed.userInfo?.time || SHICHEN[0].value);
           setProvince(parsed.userInfo?.province || PROVINCES[0]);
-          setCalendarType(parsed.userInfo?.calendarType || "阳历");
+          setCalendarType(parsed.userInfo?.rawCalendarType || parsed.userInfo?.calendarType || "阳历");
           
+          setReportUserInfo(parsed.userInfo);
           setError(null);
           setIsReading(false);
           setResult(parsed.result);
@@ -261,36 +264,45 @@ export default function Home() {
       return;
     }
 
-    const parseDateStr = (dateStr: string) => {
-      const nums = dateStr.match(/\d+/g);
-      if (nums && nums.length >= 3) {
-        const year = parseInt(nums[0]);
-        const month = parseInt(nums[1]);
-        const day = parseInt(nums[2]);
-        if (
-          year >= 1900 &&
-          year <= 2100 &&
-          month >= 1 &&
-          month <= 12 &&
-          day >= 1 &&
-          day <= 31
-        ) {
-          const d = new Date(year, month - 1, day);
-          if (
-            d.getFullYear() === year &&
-            d.getMonth() === month - 1 &&
-            d.getDate() === day
-          ) {
-            return true;
+    const validateAndFormatDate = (dateStr: string, type: string) => {
+      const parts = dateStr.split(/[-/._\s]/).filter(Boolean);
+      if (parts.length < 3) return null;
+      const y = parseInt(parts[0]);
+      const m = parseInt(parts[1]);
+      const d = parseInt(parts[2]);
+
+      if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+      if (y < 1900 || y > 2100) return null;
+
+      try {
+        if (type === "阳历") {
+          const solar = Solar.fromYmd(y, m, d);
+          if (solar.getYear() !== y || solar.getMonth() !== m || solar.getDay() !== d) {
+            return null;
           }
+          return { solar, lunar: solar.getLunar() };
+        } else {
+          // 阴历校验
+          const lunar = Lunar.fromYmd(y, m, d);
+          // 验证阴历日期是否存在
+          const solar = lunar.getSolar();
+          const backLunar = solar.getLunar();
+          // 如果 backLunar 的年月日与输入不符，说明日期非法（例如输入了30日但该月只有29日）
+          if (backLunar.getYear() !== y || Math.abs(backLunar.getMonth()) !== m || backLunar.getDay() !== d) {
+            return null;
+          }
+          return { lunar, solar };
         }
+      } catch (e) {
+        return null;
       }
-      return false;
     };
 
-    if (!parseDateStr(date)) {
+    const dateResult = validateAndFormatDate(date, calendarType);
+
+    if (!dateResult) {
       setError(
-        "出生日期格式不合法，请确保年份在 1900~2100 间且日期有效 (例如: 2000-01-01)",
+        `缘主，您输入的${calendarType}日期不合法，请确保格式为 yyyy-mm-dd (例如: 1990-1-1) 且日期在 1900~2100 间确实存在。`,
       );
       return;
     }
@@ -304,27 +316,9 @@ export default function Home() {
     localStorage.setItem("last_tone", tone);
     localStorage.setItem("last_mode", mode);
     
-    // 日期转换逻辑
-    let lunarDisplayDate = date;
-    const nums = date.match(/\d+/g);
-    if (nums && nums.length >= 3) {
-      const year = parseInt(nums[0]);
-      const month = parseInt(nums[1]);
-      const day = parseInt(nums[2]);
-      try {
-        if (calendarType === "阳历") {
-          const solar = Solar.fromYmd(year, month, day);
-          const lunar = solar.getLunar();
-          lunarDisplayDate = `${lunar.getYear()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
-        } else {
-          // 如果已经是阴历且是纯数字格式，尝试转换为更有韵味的格式
-          const lunar = Lunar.fromYmd(year, month, day);
-          lunarDisplayDate = `${lunar.getYear()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
-        }
-      } catch (err) {
-        console.error("Lunar conversion error:", err);
-      }
-    }
+    // 统一转换为阴历进行展示和作为 Prompt 参数
+    const { lunar } = dateResult;
+    const lunarDisplayDate = `${lunar.getYear()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -668,19 +662,26 @@ export default function Home() {
       });
       addLog("结果保存成功。");
 
-      const lastReading = {
-        userInfo: { name, gender, date: lunarDisplayDate, time: time, province, calendarType: "阴历" },
-        result: validated as FortuneResult,
-      };
-      try {
-        localStorage.setItem("last_reading", JSON.stringify(lastReading));
-      } catch (e) {}
+    const lastReading = {
+      userInfo: { 
+        name, 
+        gender, 
+        date: lunarDisplayDate, 
+        rawDate: date,
+        rawCalendarType: calendarType,
+        time: time, 
+        province, 
+        calendarType: "阴历" 
+      },
+      result: validated as FortuneResult,
+    };
+    try {
+      localStorage.setItem("last_reading", JSON.stringify(lastReading));
+    } catch (e) {}
 
-      setHasLastReading(true);
-      setResult(validated as FortuneResult);
-      // 更新状态以显示农历报告
-      setDate(lunarDisplayDate);
-      setCalendarType("阴历");
+    setReportUserInfo(lastReading.userInfo);
+    setHasLastReading(true);
+    setResult(validated as FortuneResult);
       setIsReading(false);
       abortControllerRef.current = null;
 
@@ -873,7 +874,7 @@ export default function Home() {
                               required
                               value={date}
                               onChange={(e) => setDate(e.target.value)}
-                              placeholder={t("例如: 1990年1月1日 或 1990-01-01")}
+                              placeholder={t("格式: yyyy-mm-dd (如 1990-1-1)")}
                               className="w-full h-[48px] bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50 transition-all placeholder:text-slate-400"
                             />
                           </div>
@@ -1131,14 +1132,7 @@ export default function Home() {
 
                   <FortuneResultView
                     result={result}
-                    userInfo={{
-                      name,
-                      gender,
-                      date,
-                      time,
-                      province,
-                      calendarType,
-                    }}
+                    userInfo={reportUserInfo}
                   />
                 </motion.div>
               )}
