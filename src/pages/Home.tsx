@@ -79,7 +79,6 @@ const SHICHEN = [
   { label: "酉时 (17:00-19:00)", value: "酉时" },
   { label: "戌时 (19:00-21:00)", value: "戌时" },
   { label: "亥时 (21:00-23:00)", value: "亥时" },
-  { label: "不知时辰", value: "未知" },
 ];
 
 const TONE_OPTIONS = [
@@ -356,14 +355,12 @@ export default function Home() {
         throw new Error("Rate limit exceeded");
       }
 
-      const finalTime = time || "未知";
       const prompt = `你是一位精通中国传统命理学的大师，深谙《易经》、阴阳五行、天干地支与八字命理。
-一位名叫 ${name}（性别：${gender}）的求测者，出生于【阴历】${lunarDisplayDate} ${finalTime}，出生地为【${province}】，前来寻求指点。
+一位名叫 ${name}（性别：${gender}）的求测者，出生于【阴历】${lunarDisplayDate} ${time}，出生地为【${province}】，前来寻求指点。
 请严格依据传统八字命理，为他推测四柱八字并推演命运。
 
 ### 核心任务：
-1. 推算生辰八字（年、月、日、时柱，包含天干、地支、五行）。
-   - **极其重要**：如果求测者的出生时间（${finalTime}）为“未知”，则时柱的所有字段（gan, zhi, wuXing）必须填写为“未知”，不得凭空捏造。
+1. 推算生辰八字（年、月、日、时柱，包含天干、地支，以及对应的天干五行和地支五行，总共8个字）。
 2. 分析姓名与出生地对运势的影响。
 3. 对流年大运进行 0 到 100 岁的十年分段评分（事业、财富、感情、健康四个维度）。
 4. 提供开运建议（幸运数字、颜色）和易经格言。
@@ -380,15 +377,15 @@ export default function Home() {
 9. **内容质量控制**：严禁在字段内容中使用未转义的双引号（"），如果内容中必须出现引号，请改用中文引号（“”）或进行转义。
 10. **数据完整性**：绝对禁止输出省略号。
 11. **输出纯净度**：不要在 JSON 之外输出任何文字，包括类似 "这里是您的报告：" 之类的开场白。
-12. **八字严谨性**：八字必须是四柱八个字，如果时辰未知，则时柱的所有字段均填“未知”。
+12. **八字严谨性**：八字必须是四柱八个字。
 
 ### JSON 结构要求 (注意不要输出格式之外的注释，必须输出完整的列表数据)：
 {
   "bazi": [
-    {"pillar": "年柱", "gan": "天干", "zhi": "地支", "wuXing": "五行"},
-    {"pillar": "月柱", "gan": "天干", "zhi": "地支", "wuXing": "五行"},
-    {"pillar": "日柱", "gan": "天干", "zhi": "地支", "wuXing": "五行"},
-    {"pillar": "时柱", "gan": "天干", "zhi": "地支", "wuXing": "五行"}
+    {"pillar": "年柱", "gan": "天干", "ganWuXing": "天干五行", "zhi": "地支", "zhiWuXing": "地支五行"},
+    {"pillar": "月柱", "gan": "天干", "ganWuXing": "天干五行", "zhi": "地支", "zhiWuXing": "地支五行"},
+    {"pillar": "日柱", "gan": "天干", "ganWuXing": "天干五行", "zhi": "地支", "zhiWuXing": "地支五行"},
+    {"pillar": "时柱", "gan": "天干", "ganWuXing": "天干五行", "zhi": "地支", "zhiWuXing": "地支五行"}
   ],
   "nameLocationAnalysis": "姓名与地理位置的综合解读文本...",
   "summary": "人生总体评分与核心命题...",
@@ -664,7 +661,7 @@ export default function Home() {
           gender,
           calendar_type: "阴历",
           date: lunarDisplayDate,
-          time: finalTime,
+          time: time,
           province,
           resultJson: validated,
         }),
@@ -672,7 +669,7 @@ export default function Home() {
       addLog("结果保存成功。");
 
       const lastReading = {
-        userInfo: { name, gender, date: lunarDisplayDate, time: finalTime, province, calendarType: "阴历" },
+        userInfo: { name, gender, date: lunarDisplayDate, time: time, province, calendarType: "阴历" },
         result: validated as FortuneResult,
       };
       try {

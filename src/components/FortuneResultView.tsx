@@ -254,14 +254,23 @@ function BaZiVisual({ bazi }: { bazi: any[] }) {
           <div key={i} className="flex flex-col items-center gap-2">
             <span className="text-xs font-bold text-slate-500 tracking-[0.2em] uppercase">{t(b.pillar)}</span>
             <div className="flex flex-col border border-slate-100 rounded-sm overflow-hidden bg-white">
-              <div className="w-12 h-12 flex items-center justify-center text-xl font-serif font-bold text-slate-800 border-b border-slate-50">
-                {t(b.gan)}
+              <div className="flex flex-col items-center border-b border-slate-50">
+                <div className="w-12 h-12 flex items-center justify-center text-xl font-serif font-bold text-slate-800">
+                  {t(b.gan)}
+                </div>
+                <div className="text-[10px] text-slate-400 pb-1 leading-none">
+                  {t(b.ganWuXing || b.wuXing)}
+                </div>
               </div>
-              <div className="w-12 h-12 flex items-center justify-center text-xl font-serif font-bold text-slate-800">
-                {t(b.zhi)}
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 flex items-center justify-center text-xl font-serif font-bold text-slate-800">
+                  {t(b.zhi)}
+                </div>
+                <div className="text-[10px] text-slate-400 pb-1 leading-none">
+                  {t(b.zhiWuXing || b.wuXing)}
+                </div>
               </div>
             </div>
-            <span className="text-xs font-bold text-slate-500 opacity-80 uppercase tracking-widest">{t(b.wuXing)}</span>
           </div>
         ))}
       </div>
