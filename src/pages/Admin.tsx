@@ -72,6 +72,11 @@ export default function Admin() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [selectedReading, setSelectedReading] = useState<any>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab]);
   
   const [dialogConfig, setDialogConfig] = useState<{
     isOpen: boolean;
@@ -141,9 +146,10 @@ export default function Admin() {
         const s = await getJson(res);
         setSettings((prev: any) => ({ ...prev, ...s }));
       } else if (activeTab === "moderation") {
-        const res1 = await fetchWithToken("/api/admin/comments");
+        const res1 = await fetchWithToken(`/api/admin/comments?page=${page}&limit=${limit}`);
         const c = await getJson(res1);
-        setComments(Array.isArray(c) ? c : []);
+        setComments(Array.isArray(c.data) ? c.data : []);
+        setTotal(c.total || 0);
 
         const res2 = await fetchWithToken("/api/admin/banned-ips");
         const b = await getJson(res2);
@@ -374,8 +380,25 @@ export default function Admin() {
     });
   };
 
-  const viewReading = (reading: any) => {
+  const viewReading = async (reading: any) => {
+    setLoadingDetail(true);
     setSelectedReading(reading);
+    try {
+      const res = await fetchWithToken(`/api/admin/readings/${reading.id}`);
+      if (res.ok) {
+        const fullData = await res.json();
+        setSelectedReading(fullData);
+      } else {
+        setMsg("详情加载失败");
+        setTimeout(() => setMsg(""), 3000);
+      }
+    } catch (e) {
+      console.error(e);
+      setMsg("网络错误");
+      setTimeout(() => setMsg(""), 3000);
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
   const formatToBeijingTime = (dateStr: string | null | undefined) => {
@@ -714,72 +737,101 @@ export default function Admin() {
               </div>
 
               {modSubTab === "comments" ? (
-                <div className="bg-white rounded-xl overflow-x-auto border border-blue-100 shadow-sm">
-                  <div className="p-4 border-b border-blue-100 flex items-center justify-between">
-                     <span className="text-sm text-slate-500">已选中 {selectedComments.size} 条评论</span>
-                     {selectedComments.size > 0 && (
+                <>
+                  <div className="bg-white rounded-xl overflow-x-auto border border-blue-100 shadow-sm">
+                    <div className="p-4 border-b border-blue-100 flex items-center justify-between">
+                      <span className="text-sm text-slate-500">已选中 {selectedComments.size} 条评论</span>
+                      {selectedComments.size > 0 && (
                         <button 
                             onClick={handleBatchDeleteComments}
                             className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition"
                         >
                             <Trash2 size={16} /> 批量删除
                         </button>
-                     )}
-                  </div>
-                  <table className="w-full text-left min-w-[600px]">
-                    <thead className="bg-slate-50 border-b border-blue-100">
-                      <tr>
-                        <th className="p-4 font-medium text-slate-600">
-                           <input type="checkbox" checked={selectedComments.size === comments.length && comments.length > 0} onChange={toggleSelectAll} />
-                        </th>
-                        <th className="p-4 font-medium text-slate-600">IP / 位置</th>
-                        <th className="p-4 font-medium text-slate-600">内容</th>
-                        <th className="p-4 font-medium text-slate-600 whitespace-nowrap">时间</th>
-                        <th className="p-4 font-medium text-slate-600 text-right whitespace-nowrap">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-blue-50">
-                      {comments.map((c) => (
-                        <tr key={c.id} className="hover:bg-slate-50 transition">
-                          <td className="p-4">
-                            <input type="checkbox" checked={selectedComments.has(c.id)} onChange={() => toggleCommentSelection(c.id)} />
-                          </td>
-                          <td className="p-4">
-                            <div className="text-sm font-medium text-slate-800">{c.ip}</div>
-                            <div className="text-[10px] text-slate-400">{c.location}</div>
-                          </td>
-                          <td className="p-4 w-1/2">
-                            <p className="text-sm text-slate-600 line-clamp-2">{c.content}</p>
-                          </td>
-                          <td className="p-4 text-xs text-slate-400 whitespace-nowrap">
-                            {formatToBeijingTime(c.created_at)}
-                          </td>
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-3">
-                              <button 
-                                onClick={() => handleBanIp(c.ip)}
-                                className="text-orange-500 hover:text-orange-700 transition" 
-                                title="封禁 IP"
-                              >
-                                <ShieldX size={18} />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteComment(c.id)}
-                                className="text-rose-500 hover:text-rose-700 transition" 
-                                title="删除评论"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {comments.length === 0 && (
-                        <tr><td colSpan={4} className="p-8 text-center text-slate-400">暂无评论数据</td></tr>
                       )}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+                    <table className="w-full text-left min-w-[600px]">
+                      <thead className="bg-slate-50 border-b border-blue-100">
+                        <tr>
+                          <th className="p-4 font-medium text-slate-600">
+                            <input type="checkbox" checked={selectedComments.size === comments.length && comments.length > 0} onChange={toggleSelectAll} />
+                          </th>
+                          <th className="p-4 font-medium text-slate-600">IP / 位置</th>
+                          <th className="p-4 font-medium text-slate-600">内容</th>
+                          <th className="p-4 font-medium text-slate-600 whitespace-nowrap">时间</th>
+                          <th className="p-4 font-medium text-slate-600 text-right whitespace-nowrap">操作</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-blue-50">
+                        {comments.map((c) => (
+                          <tr key={c.id} className="hover:bg-slate-50 transition">
+                            <td className="p-4">
+                              <input type="checkbox" checked={selectedComments.has(c.id)} onChange={() => toggleCommentSelection(c.id)} />
+                            </td>
+                            <td className="p-4">
+                              <div className="text-sm font-medium text-slate-800">{c.ip}</div>
+                              <div className="text-[10px] text-slate-400">{c.location}</div>
+                            </td>
+                            <td className="p-4 w-1/2">
+                              <p className="text-sm text-slate-600 line-clamp-2">{c.content}</p>
+                            </td>
+                            <td className="p-4 text-xs text-slate-400 whitespace-nowrap">
+                              {formatToBeijingTime(c.created_at)}
+                            </td>
+                            <td className="p-4 text-right">
+                              <div className="flex items-center justify-end gap-3">
+                                <button 
+                                  onClick={() => handleBanIp(c.ip)}
+                                  className="text-orange-500 hover:text-orange-700 transition" 
+                                  title="封禁 IP"
+                                >
+                                  <ShieldX size={18} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteComment(c.id)}
+                                  className="text-rose-500 hover:text-rose-700 transition" 
+                                  title="删除评论"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {comments.length === 0 && (
+                          <tr><td colSpan={4} className="p-8 text-center text-slate-400">暂无评论数据</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {total > limit && (
+                    <div className="flex items-center justify-between mt-6 bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                      <div className="text-sm text-slate-500 font-medium">
+                        共 {total} 条评论
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setPage(Math.max(1, page - 1))}
+                          disabled={page === 1}
+                          className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          上一页
+                        </button>
+                        <span className="px-4 py-2 text-sm text-slate-600 font-medium flex items-center">
+                          {page} / {Math.max(1, Math.ceil(total / limit))}
+                        </span>
+                        <button
+                          onClick={() => setPage(page + 1)}
+                          disabled={page >= Math.ceil(total / limit)}
+                          className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          下一页
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="bg-white rounded-xl overflow-x-auto border border-blue-100 shadow-sm">
                   <table className="w-full text-left min-w-[600px]">
@@ -1057,28 +1109,39 @@ export default function Admin() {
               </div>
             </div>
             <div className="overflow-y-auto flex-1 font-serif text-slate-700 bg-slate-50/30 w-full relative pb-10">
-              {(() => {
-                try {
-                  const res = JSON.parse(selectedReading.result_json || "{}");
-                  return (
-                    <div className="mx-auto bg-white shadow-sm">
-                      <FortuneResultView
-                        result={res}
-                        userInfo={{
-                          name: selectedReading.name,
-                          gender: selectedReading.gender || "未知",
-                          date: selectedReading.birth_date,
-                          time: selectedReading.birth_time,
-                          province: selectedReading.province,
-                          calendarType: selectedReading.calendar_type,
-                        }}
-                      />
-                    </div>
-                  );
-                } catch (e) {
-                  return <p className="p-6">解析出错或无结果</p>;
-                }
-              })()}
+              {loadingDetail ? (
+                <div className="flex flex-col items-center justify-center p-20 gap-4">
+                  <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-slate-500 font-serif">正在召唤命理报告...</p>
+                </div>
+              ) : selectedReading?.result_json ? (
+                (() => {
+                  try {
+                    const res = JSON.parse(selectedReading.result_json || "{}");
+                    return (
+                      <div className="mx-auto bg-white shadow-sm">
+                        <FortuneResultView
+                          result={res}
+                          userInfo={{
+                            name: selectedReading.name,
+                            gender: selectedReading.gender || "未知",
+                            date: selectedReading.birth_date,
+                            time: selectedReading.birth_time,
+                            province: selectedReading.province,
+                            calendarType: selectedReading.calendar_type,
+                          }}
+                        />
+                      </div>
+                    );
+                  } catch (e) {
+                    return <p className="p-6 text-center text-rose-500">报告解析异常，请检查数据格式</p>;
+                  }
+                })()
+              ) : (
+                <div className="p-20 text-center text-slate-400">
+                  <p>暂无报告结果</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

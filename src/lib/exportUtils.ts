@@ -1,4 +1,4 @@
-import { toJpeg } from 'html-to-image';
+import { domToJpeg } from 'modern-screenshot';
 
 export async function generateExportData(
   elementId: string, 
@@ -8,52 +8,15 @@ export async function generateExportData(
   const el = document.getElementById(elementId);
   if (!el) throw new Error('Element not found');
   
-  let parentContainer = el.parentElement;
-  let oldOverflow = '';
-  let oldHeight = '';
-  if (parentContainer) {
-    oldOverflow = parentContainer.style.overflow;
-    oldHeight = parentContainer.style.height;
-    parentContainer.style.overflow = 'visible';
-    parentContainer.style.height = 'auto';
-  }
-
-  let oldElOverflow = el.style.overflow;
-  let oldElHeight = el.style.height;
-  let oldElPosition = el.style.position;
-  let oldElLeft = el.style.left;
-  let oldElTop = el.style.top;
-  let oldElMargin = el.style.margin;
-
-  el.style.overflow = 'visible';
-  el.style.height = 'auto';
-  el.style.position = 'absolute';
-  el.style.left = '0';
-  el.style.top = '0';
-  el.style.margin = '0';
-
   try {
-    const imgData = await toJpeg(el, { 
-      quality: 0.95,
-      pixelRatio: 2, 
-      backgroundColor: '#ffffff',
-      skipFonts: true,
-      style: {
-        transform: 'scale(1)',
-        transformOrigin: 'top left'
-      }
-    });
+    // Wait for fonts and images to be ready
+    await new Promise(r => setTimeout(r, 500));
 
-    if (parentContainer) {
-      parentContainer.style.overflow = oldOverflow;
-      parentContainer.style.height = oldHeight;
-    }
-    el.style.overflow = oldElOverflow;
-    el.style.height = oldElHeight;
-    el.style.position = oldElPosition;
-    el.style.left = oldElLeft;
-    el.style.top = oldElTop;
-    el.style.margin = oldElMargin;
+    const imgData = await domToJpeg(el, {
+      quality: 0.95,
+      scale: 2,
+      backgroundColor: '#ffffff',
+    });
     
     if (type === 'image') {
       return { url: imgData };
@@ -73,16 +36,7 @@ export async function generateExportData(
       return { url };
     }
   } catch (err) {
-    if (parentContainer) {
-      parentContainer.style.overflow = oldOverflow;
-      parentContainer.style.height = oldHeight;
-    }
-    el.style.overflow = oldElOverflow;
-    el.style.height = oldElHeight;
-    el.style.position = oldElPosition;
-    el.style.left = oldElLeft;
-    el.style.top = oldElTop;
-    el.style.margin = oldElMargin;
+    console.error('Export failed:', err);
     throw err;
   }
 }

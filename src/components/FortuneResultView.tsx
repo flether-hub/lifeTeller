@@ -415,15 +415,15 @@ function FortuneResultViewInner({
           <div className="mt-8 flex justify-center gap-10 text-xs text-indigo-800 font-serif">
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("缘主")}</span>
-              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.name)}（{t(userInfo.gender)}）</span>
+              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.name || "匿名")}（{t(userInfo.gender || "未知")}）</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("生辰")}</span>
-              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.calendarType)} {userInfo.date} {t(userInfo.time)}</span>
+              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.calendarType || "公历")} {userInfo.date || "未知日期"} {t(userInfo.time || "未知时辰")}</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("出生地")}</span>
-              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.province)}</span>
+              <span className="font-bold text-indigo-950 text-sm">{t(userInfo.province || "未知")}</span>
             </div>
           </div>
         )}

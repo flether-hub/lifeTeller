@@ -323,8 +323,13 @@ try {
 
   app.get('/api/admin/comments', authenticateAdmin, (req, res) => {
     try {
-      const comments = db.prepare('SELECT * FROM comments ORDER BY created_at DESC').all();
-      res.json(comments);
+      const page = parseInt(req.query.page as string || '1');
+      const limit = parseInt(req.query.limit as string || '20');
+      const offset = (page - 1) * limit;
+
+      const countRes = db.prepare('SELECT COUNT(*) as count FROM comments').get() as any;
+      const comments = db.prepare('SELECT * FROM comments ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
+      res.json({ data: comments, total: countRes?.count || 0 });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -658,15 +663,29 @@ try {
 
     const countRes = db.prepare('SELECT COUNT(*) as count FROM readings').get() as any;
     const count = countRes?.count || 0;
-    const data = db.prepare('SELECT * FROM readings ORDER BY id DESC LIMIT ? OFFSET ?').all(limit, offset);
+    const data = db.prepare('SELECT id, ip, ip_location, lat, lon, name, gender, calendar_type, birth_date, birth_time, province, created_at FROM readings ORDER BY id DESC LIMIT ? OFFSET ?').all(limit, offset);
 
     res.json({ data, total: count });
   });
 
+  app.get('/api/admin/readings/:id', authenticateAdmin, (req, res) => {
+    try {
+      const data = db.prepare('SELECT * FROM readings WHERE id = ?').get(req.params.id);
+      if (!data) return res.status(404).json({ error: '记录不存在' });
+      res.json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/admin/map-data', authenticateAdmin, (req, res) => {
-    const points = db.prepare("SELECT ip_location, COUNT(*) as count, lat, lon FROM readings WHERE ip_location != '未知' GROUP BY ip_location").all();
-    const provinces = db.prepare("SELECT province as ip_location, COUNT(*) as count, 0 as lat, 0 as lon FROM readings GROUP BY province").all();
-    res.json({ points, provinces });
+    try {
+      const points = db.prepare("SELECT ip_location, COUNT(*) as count, lat, lon FROM readings WHERE ip_location != '未知' GROUP BY ip_location ORDER BY count DESC LIMIT 100").all();
+      const provinces = db.prepare("SELECT province as ip_location, COUNT(*) as count, 0 as lat, 0 as lon FROM readings GROUP BY province ORDER BY count DESC").all();
+      res.json({ points, provinces });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   app.get('/api/admin/settings', authenticateAdmin, (req, res) => {

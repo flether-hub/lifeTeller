@@ -1085,7 +1085,7 @@ export default function Home() {
                           try {
                             const { url } = await generateExportData(
                               "fortune-result-content",
-                              name,
+                              reportUserInfo?.name || name,
                               "pdf",
                             );
                             if (url) setExportReadyUrl(url);
@@ -1107,7 +1107,7 @@ export default function Home() {
                           try {
                             const { url } = await generateExportData(
                               "fortune-result-content",
-                              name,
+                              reportUserInfo?.name || name,
                               "image",
                             );
                             if (url) setExportReadyUrl(url);
@@ -1235,7 +1235,7 @@ export default function Home() {
                 {exportType === "pdf" ? (
                   <a
                     href={exportReadyUrl || "#"}
-                    download={`八字测算_${name}.pdf`}
+                    download={`八字测算_${reportUserInfo?.name || name}.pdf`}
                     onClick={() =>
                       setTimeout(() => setExportModalOpen(false), 500)
                     }
@@ -1246,7 +1246,7 @@ export default function Home() {
                 ) : (
                   <a
                     href={exportReadyUrl || "#"}
-                    download={`八字测算_${name}.jpg`}
+                    download={`八字测算_${reportUserInfo?.name || name}.jpg`}
                     onClick={() =>
                       setTimeout(() => setExportModalOpen(false), 500)
                     }
