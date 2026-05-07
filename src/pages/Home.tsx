@@ -193,9 +193,19 @@ export default function Home() {
       if (item) {
         const parsed = JSON.parse(item);
         if (parsed && parsed.result) {
+          const cleanDate = (d: string) => {
+            if (!d) return "";
+            if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(d)) return d;
+            const matches = d.match(/(\d+)/g);
+            if (matches && matches.length >= 3) {
+              return `${matches[0]}-${matches[1]}-${matches[2]}`;
+            }
+            return d;
+          };
+
           setName(parsed.userInfo?.name || "");
           setGender(parsed.userInfo?.gender || "男");
-          setDate(parsed.userInfo?.rawDate || parsed.userInfo?.date || "");
+          setDate(cleanDate(parsed.userInfo?.rawDate || parsed.userInfo?.date || ""));
           setTime(parsed.userInfo?.time || SHICHEN[0].value);
           setProvince(parsed.userInfo?.province || PROVINCES[0]);
           setCalendarType(parsed.userInfo?.rawCalendarType || parsed.userInfo?.calendarType || "阳历");

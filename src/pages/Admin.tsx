@@ -744,7 +744,7 @@ export default function Admin() {
                       {selectedComments.size > 0 && (
                         <button 
                             onClick={handleBatchDeleteComments}
-                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition"
+                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition shadow-sm active:scale-95"
                         >
                             <Trash2 size={16} /> 批量删除
                         </button>
@@ -773,7 +773,7 @@ export default function Admin() {
                               <div className="text-[10px] text-slate-400">{c.location}</div>
                             </td>
                             <td className="p-4 w-1/2">
-                              <p className="text-sm text-slate-600 line-clamp-2">{c.content}</p>
+                              <p className="text-sm text-slate-600 line-clamp-2 italic">{c.content}</p>
                             </td>
                             <td className="p-4 text-xs text-slate-400 whitespace-nowrap">
                               {formatToBeijingTime(c.created_at)}
@@ -799,7 +799,7 @@ export default function Admin() {
                           </tr>
                         ))}
                         {comments.length === 0 && (
-                          <tr><td colSpan={4} className="p-8 text-center text-slate-400">暂无评论数据</td></tr>
+                          <tr><td colSpan={5} className="p-8 text-center text-slate-400">暂无评论数据</td></tr>
                         )}
                       </tbody>
                     </table>
