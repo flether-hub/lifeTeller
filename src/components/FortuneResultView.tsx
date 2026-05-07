@@ -177,7 +177,7 @@ function LuckyVisual({
       {numbers && (
         <div className="text-center">
           <div className="flex flex-col items-center gap-1 mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{t("五行吉数")}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] whitespace-nowrap">{t("五行吉数")}</span>
             <div className="h-0.5 w-6 bg-slate-100 rounded-full" />
           </div>
           <div className="flex justify-center gap-4">
@@ -196,7 +196,7 @@ function LuckyVisual({
       {colors && (
         <div className="text-center">
           <div className="flex flex-col items-center gap-1 mb-3">
-             <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{t("生旺颜色")}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] whitespace-nowrap">{t("生旺颜色")}</span>
              <div className="h-0.5 w-6 bg-slate-100 rounded-full" />
           </div>
           <div className="flex justify-center gap-3">
@@ -252,7 +252,7 @@ function BaZiVisual({ bazi }: { bazi: any[] }) {
         {/* Traditional reading: Hour, Day, Month, Year */}
         {bazi.map((b, i) => (
           <div key={i} className="flex flex-col items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 tracking-[0.2em] uppercase">{t(b.pillar)}</span>
+            <span className="text-xs font-bold text-slate-500 tracking-[0.2em] uppercase whitespace-nowrap">{t(b.pillar)}</span>
             <div className="flex flex-col border border-slate-100 rounded-sm overflow-hidden bg-white">
               <div className="flex flex-col items-center border-b border-slate-50">
                 <div className="w-12 h-12 flex items-center justify-center text-xl font-serif font-bold text-slate-800">
@@ -334,7 +334,7 @@ export function FortuneResultView(props: {
 
   return (
     <div 
-      className="w-full bg-slate-100/30 flex justify-center overflow-hidden py-4 md:py-10 px-0 print:block print:p-0 print:m-0 print:w-[794px] print:bg-white"
+      className="relative w-full bg-slate-100/30 flex justify-center overflow-hidden py-4 md:py-10 px-0 print:block print:p-0 print:m-0 print:w-[794px] print:bg-white"
       style={{ height: scale !== 1 ? `${contentHeight * scale}px` : "auto" }}
     >
       <div
@@ -414,15 +414,15 @@ function FortuneResultViewInner({
         {userInfo && (
           <div className="mt-8 flex justify-center gap-4 sm:gap-10 text-xs text-indigo-800 font-serif">
             <div className="flex flex-col items-center">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("缘主")}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1 whitespace-nowrap">{t("缘主")}</span>
               <span className="font-bold text-indigo-950 text-sm whitespace-nowrap">{t(userInfo.name || "匿名")}（{t(userInfo.gender || "未知")}）</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("生辰")}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1 whitespace-nowrap">{t("生辰")}</span>
               <span className="font-bold text-indigo-950 text-sm whitespace-nowrap">{t(userInfo.calendarType || "公历")} {userInfo.date || "未知日期"} {t(userInfo.time || "未知时辰")}</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">{t("出生地")}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1 whitespace-nowrap">{t("出生地")}</span>
               <span className="font-bold text-indigo-950 text-sm whitespace-nowrap">{t(userInfo.province || "未知")}</span>
             </div>
           </div>
@@ -503,7 +503,7 @@ function FortuneResultViewInner({
       {/* 页脚 - 易经箴言在此显示 */}
       <div className="mt-16 pt-12 border-t border-slate-900/10 text-center flex flex-col items-center">
         <div className="mb-4 flex flex-col items-center gap-1">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{t("易经箴言")}</span>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] whitespace-nowrap">{t("易经箴言")}</span>
         </div>
         <p className="text-base font-sans font-bold text-slate-600 mb-8 max-w-lg leading-relaxed text-center px-4">
           "{result.iChingQuote || t("天数难测，唯德报之")}"

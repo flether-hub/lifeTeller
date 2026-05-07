@@ -9,22 +9,52 @@ export async function generateExportData(
   if (!el) throw new Error('Element not found');
   
   try {
-    // Wait for fonts and images to be ready
-    await new Promise(r => setTimeout(r, 500));
+    // Temporarily disable transform to avoid offset issues on mobile 
+    const prevTransform = el.style.transform;
+    const prevTransition = el.style.transition;
+    const prevPosition = el.style.position;
+    const prevLeft = el.style.left;
+    const prevTop = el.style.top;
+    const prevMargin = el.style.margin;
+
+    el.style.transform = 'none';
+    el.style.transition = 'none';
+    el.style.position = 'absolute';
+    el.style.left = '0';
+    el.style.top = '0';
+    el.style.margin = '0';
+    
+    // Wait for layout to update
+    await new Promise(r => setTimeout(r, 100));
+
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
 
     const imgData = await domToJpeg(el, {
       quality: 0.95,
       scale: 2,
       backgroundColor: '#ffffff',
+      width: width,
+      height: height,
+      style: {
+        transform: 'none',
+        transformOrigin: 'top left',
+        margin: '0',
+      }
     });
+
+    // Restore original transform
+    el.style.transform = prevTransform;
+    el.style.transition = prevTransition;
+    el.style.position = prevPosition;
+    el.style.left = prevLeft;
+    el.style.top = prevTop;
+    el.style.margin = prevMargin;
     
     if (type === 'image') {
       return { url: imgData };
     } else {
       const { jsPDF } = await import('jspdf');
-      
-      const width = el.offsetWidth;
-      const height = el.offsetHeight;
       
       const pdfWidth = 210; // A4 width in mm
       const pdfHeight = (height * pdfWidth) / width;
