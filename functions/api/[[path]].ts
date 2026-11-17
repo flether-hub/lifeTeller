@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
 interface Env {
   DB: any; // D1Database
@@ -301,57 +301,90 @@ export const onRequest = async (context: any) => {
           },
         });
       } else {
-        const ai = new GoogleGenAI({ apiKey });
-        let stream;
-        try {
-          const geminiModelId = ((await getSetting("gemini_model_id")) as string) || "gemini-2.0-flash";
-          const today = getTodayBeijing();
-          stream = await ai.models.generateContentStream({
-            model: geminiModelId,
-            contents: `Today is ${today}. ${body.prompt}`,
-          });
-        } catch (err: any) {
-          console.error("AI API Error:", err);
-          let errMsg = err?.message || String(err);
-          try {
-            if (errMsg.startsWith('{')) {
-              const parsed = JSON.parse(errMsg);
-              if (parsed.error && parsed.error.message) {
-                errMsg = parsed.error.message;
-              }
-            } else if (errMsg.startsWith('ApiError: {')) {
-              const parsed = JSON.parse(errMsg.substring(10));
-              if (parsed.error && parsed.error.message) {
-                errMsg = parsed.error.message;
-              }
-            }
-          } catch(e) {}
-          return new Response(`\n--STREAM-ERROR--\n${errMsg}`, {
-            status: 200,
-            headers: { "Content-Type": "text/plain; charset=utf-8" }
-          });
-        }
+        const ai = new GoogleGenAI({
+          apiKey,
+          httpOptions: {
+            headers: {
+              "User-Agent": "aistudio-build",
+            },
+          },
+        });
+        const geminiModelId = (((await getSetting("gemini_model_id")) as string) || "").trim() || "gemini-4-hydrogen";
+        const isThinkingSeries = /^(?:models\/)?gemini-(?:3|4)/i.test(geminiModelId);
+        const today = getTodayBeijing();
 
         (async () => {
+          let hasStartedContent = false;
+          const heartbeatTimer = setInterval(() => {
+            if (!hasStartedContent) {
+              writer.write(encoder.encode("--THINKING--\n")).catch(() => {});
+            }
+          }, 3000);
+
           try {
-            for await (const chunk of stream) {
-              if (chunk.text) {
-                await writer.write(encoder.encode(chunk.text));
+            if (isThinkingSeries) {
+              await writer.write(encoder.encode("--THINKING--\n"));
+            }
+
+            let outputChars = 0;
+            const maxRetries = 1;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+              try {
+                const stream = await ai.models.generateContentStream({
+                  model: geminiModelId,
+                  contents: `Today is ${today}. ${body.prompt}`,
+                  config: {
+                    responseMimeType: "application/json",
+                    ...(isThinkingSeries
+                      ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } }
+                      : {}),
+                  },
+                });
+
+                for await (const chunk of stream) {
+                  const text = chunk.text;
+                  if (text) {
+                    if (!hasStartedContent) {
+                      hasStartedContent = true;
+                      clearInterval(heartbeatTimer);
+                      await writer.write(encoder.encode("--STREAM-START--\n"));
+                    }
+                    outputChars += text.length;
+                    await writer.write(encoder.encode(text));
+                  } else if (!hasStartedContent) {
+                    await writer.write(encoder.encode("--THINKING--\n"));
+                  }
+                }
+                break;
+              } catch (err: any) {
+                const msg = (err?.message || String(err)).toLowerCase();
+                const isTransient = msg.includes("503") || msg.includes("high demand") || msg.includes("unavailable") || msg.includes("429") || msg.includes("resource_exhausted");
+                if (!hasStartedContent && attempt < maxRetries && isTransient) {
+                  await writer.write(encoder.encode("--RETRY--\n"));
+                  await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+                  continue;
+                }
+                throw err;
               }
+            }
+
+            clearInterval(heartbeatTimer);
+            if (outputChars === 0) {
+              await writer.write(
+                encoder.encode("\n--STREAM-ERROR--\nAI 模型未返回任何有效内容，请检查模型配置或稍后重试"),
+              );
             }
             await writer.close();
           } catch (err: any) {
+            clearInterval(heartbeatTimer);
             console.error("Stream error:", err);
             let errMsg = err?.message || String(err);
             try {
-              if (errMsg.startsWith('{')) {
-                const parsed = JSON.parse(errMsg);
-                if (parsed.error && parsed.error.message) {
-                  errMsg = parsed.error.message;
-                }
-              } else if (errMsg.startsWith('ApiError: {')) {
-                const parsed = JSON.parse(errMsg.substring(10));
-                if (parsed.error && parsed.error.message) {
+              const firstBrace = errMsg.indexOf("{");
+              const lastBrace = errMsg.lastIndexOf("}");
+              if (firstBrace !== -1 && lastBrace > firstBrace) {
+                const parsed = JSON.parse(errMsg.slice(firstBrace, lastBrace + 1));
+                if (parsed?.error?.message) {
                   errMsg = parsed.error.message;
                 }
               }
@@ -378,7 +411,7 @@ export const onRequest = async (context: any) => {
       if (providerName === "aliyun") {
          modelId = ((await getSetting("aliyun_model_id")) as string) || "qwen-plus";
       } else {
-         modelId = ((await getSetting("gemini_model_id")) as string) || "gemini-2.0-flash";
+         modelId = (((await getSetting("gemini_model_id")) as string) || "").trim() || "gemini-4-hydrogen";
       }
       return jsonResponse({ providerName, modelId });
     }

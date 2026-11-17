@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import cors from 'cors';
 import Database from 'better-sqlite3';
 import fs from 'fs';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import { jwtVerify, SignJWT } from 'jose';
 import crypto from 'crypto';
 import { rateLimit } from 'express-rate-limit';
@@ -203,7 +203,7 @@ try {
         modelId = (db.prepare('SELECT value FROM settings WHERE key = ?').get('aliyun_model_id') as any)?.value || 'qwen-plus';
         providerName = '阿里云百炼';
       } else {
-        modelId = (db.prepare('SELECT value FROM settings WHERE key = ?').get('gemini_model_id') as any)?.value || 'gemini-2.0-flash';
+        modelId = ((db.prepare('SELECT value FROM settings WHERE key = ?').get('gemini_model_id') as any)?.value || '').trim() || 'gemini-4-hydrogen';
         providerName = 'Google Gemini';
       }
 
@@ -544,49 +544,148 @@ try {
            return res.end();
         }
 
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({
+          apiKey,
+          httpOptions: {
+            headers: {
+              'User-Agent': 'aistudio-build',
+            },
+          },
+        });
         const geminiModelRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('gemini_model_id') as { value: string } | undefined;
-        const geminiModelId = geminiModelRow?.value || 'gemini-2.0-flash';
-        
-        let stream;
-        try {
-          stream = await ai.models.generateContentStream({
-            model: geminiModelId,
-            contents: fullPrompt
-          });
-        } catch (err: any) {
-          console.error("AI API Error:", err);
-          let errMsg = err?.message || String(err);
-          try {
-            if (errMsg.startsWith('{')) {
-              const parsed = JSON.parse(errMsg);
-              if (parsed.error && parsed.error.message) {
-                errMsg = parsed.error.message;
-              }
-            } else if (errMsg.startsWith('ApiError: {')) {
-              const parsed = JSON.parse(errMsg.substring(10));
-              if (parsed.error && parsed.error.message) {
-                errMsg = parsed.error.message;
-              }
-            }
-          } catch(e) {}
-          
-          // Mask API keys to prevent leakage
-          errMsg = errMsg.replace(/(sk-[a-zA-Z0-9]{20,})/g, "sk-***").replace(/(AIza[0-9A-Za-z-_]{35})/g, "AIza***");
-          
-          res.write(`\n--STREAM-ERROR--\n${errMsg}`);
-          return res.end();
-        }
+        const geminiModelId = (geminiModelRow?.value || '').trim() || 'gemini-4-hydrogen';
+        const isThinkingSeries = /^(?:models\/)?gemini-(?:3|4)/i.test(geminiModelId);
 
-        for await (const chunk of stream) {
-          if (chunk.text) {
-            res.write(chunk.text);
+        let clientClosed = false;
+        let hasStartedContent = false;
+        const heartbeatTimer = setInterval(() => {
+          if (!hasStartedContent && !clientClosed && !res.writableEnded) {
+            res.write('--THINKING--\n');
             if (typeof (res as any).flush === 'function') {
               (res as any).flush();
             }
           }
+        }, 3000);
+
+        res.on('close', () => {
+          if (!res.writableEnded) {
+            clientClosed = true;
+            clearInterval(heartbeatTimer);
+          }
+        });
+
+        const extractApiErrorMsg = (err: any) => {
+          let errMsg = err?.message || String(err);
+          try {
+            const firstBrace = errMsg.indexOf('{');
+            const lastBrace = errMsg.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace > firstBrace) {
+              const parsed = JSON.parse(errMsg.slice(firstBrace, lastBrace + 1));
+              if (parsed?.error?.message) {
+                errMsg = parsed.error.message;
+              }
+            }
+          } catch (e) {}
+          return errMsg
+            .replace(/(sk-[a-zA-Z0-9]{20,})/g, "sk-***")
+            .replace(/(AIza[0-9A-Za-z-_]{35})/g, "AIza***");
+        };
+
+        const isTransientError = (err: any) => {
+          const msg = (err?.message || String(err)).toLowerCase();
+          const status = err?.status || err?.code;
+          return (
+            status === 503 ||
+            status === 429 ||
+            msg.includes('503') ||
+            msg.includes('unavailable') ||
+            msg.includes('high demand') ||
+            msg.includes('429') ||
+            msg.includes('resource_exhausted')
+          );
+        };
+
+        let outputChars = 0;
+        const maxRetries = 1;
+        try {
+          // Send an initial thinking tick immediately if it's a reasoning model
+          if (isThinkingSeries && !res.writableEnded) {
+            res.write('--THINKING--\n');
+            if (typeof (res as any).flush === 'function') {
+              (res as any).flush();
+            }
+          }
+
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            if (clientClosed || res.writableEnded) break;
+            try {
+              const stream = await ai.models.generateContentStream({
+                model: geminiModelId,
+                contents: fullPrompt,
+                config: {
+                  responseMimeType: 'application/json',
+                  ...(isThinkingSeries
+                    ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } }
+                    : {}),
+                },
+              });
+
+              for await (const chunk of stream) {
+                if (clientClosed || res.writableEnded) break;
+                const text = chunk.text;
+                if (text) {
+                  if (!hasStartedContent) {
+                    hasStartedContent = true;
+                    clearInterval(heartbeatTimer);
+                    res.write('--STREAM-START--\n');
+                  }
+                  outputChars += text.length;
+                  res.write(text);
+                  if (typeof (res as any).flush === 'function') {
+                    (res as any).flush();
+                  }
+                } else if (!hasStartedContent && !res.writableEnded) {
+                  // Model is still emitting thought/reasoning chunks; keep stream alive
+                  res.write('--THINKING--\n');
+                  if (typeof (res as any).flush === 'function') {
+                    (res as any).flush();
+                  }
+                }
+              }
+              break; // Completed successfully
+            } catch (err: any) {
+              if (!hasStartedContent && attempt < maxRetries && isTransientError(err) && !clientClosed && !res.writableEnded) {
+                const delayMs = 1000 * Math.pow(2, attempt);
+                console.warn(`Transient Gemini error on attempt ${attempt + 1}, retrying in ${delayMs}ms:`, err?.message || err);
+                res.write('--RETRY--\n');
+                if (typeof (res as any).flush === 'function') {
+                  (res as any).flush();
+                }
+                await new Promise((resolve) => setTimeout(resolve, delayMs));
+                continue;
+              }
+              throw err;
+            }
+          }
+        } catch (err: any) {
+          clearInterval(heartbeatTimer);
+          console.error("AI API Error:", err);
+          const errMsg = extractApiErrorMsg(err);
+          if (!clientClosed && !res.writableEnded) {
+            res.write(`\n--STREAM-ERROR--\n${errMsg}`);
+            res.end();
+          }
+          return;
+        } finally {
+          clearInterval(heartbeatTimer);
         }
-        res.end();
+
+        if (!clientClosed && !res.writableEnded) {
+          if (outputChars === 0) {
+            res.write('\n--STREAM-ERROR--\nAI 模型未返回任何有效内容，请检查模型配置或稍后重试');
+          }
+          res.end();
+        }
       }
 
     } catch (err: any) {

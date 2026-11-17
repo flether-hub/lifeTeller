@@ -64,7 +64,7 @@ export default function Admin() {
     total_daily_limit: "",
     ip_daily_limit: "",
     gemini_api_key: "",
-    gemini_model_id: "gemini-2.0-flash",
+    gemini_model_id: "gemini-4-hydrogen",
     aliyun_api_key: "",
     model_provider: "gemini",
     aliyun_model_id: "qwen-plus",
@@ -954,9 +954,9 @@ export default function Admin() {
                         <label className="block text-xs text-slate-500 mb-2 ml-1 font-medium">Gemini Model ID</label>
                         <input
                           type="text"
-                          value={settings.gemini_model_id || "gemini-2.0-flash"}
+                          value={settings.gemini_model_id || "gemini-4-hydrogen"}
                           onChange={(e) => setSettings({ ...settings, gemini_model_id: e.target.value })}
-                          placeholder="gemini-2.0-flash..."
+                          placeholder="gemini-4-hydrogen..."
                           className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition font-mono"
                         />
                       </div>

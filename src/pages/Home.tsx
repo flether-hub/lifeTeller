@@ -435,8 +435,11 @@ export default function Home() {
       if (!reader) throw new Error("无法读取服务器响应");
 
       const decoder = new TextDecoder();
+      let rawText = "";
       let fullText = "";
       let lastReportedLen = 0;
+      let hasLoggedThinking = false;
+      let hasLoggedRetry = false;
       const progressPhases = [
         { th: 20, msg: "天机枢纽通讯中，建立时空连接..." },
         { th: 50, msg: "大语言模型接入完成，天命数据同步..." },
@@ -454,40 +457,65 @@ export default function Home() {
 
       addLog("[AI] 与天机枢纽握手成功，开始接收推演数据流...");
 
-      while (true) {
-        if (abortController.signal.aborted) throw new Error("推演已手动中断");
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        fullText += chunk;
-        
-        // Progressively emit friendly log messages instead of dumping raw JSON
-        const len = fullText.length;
-        for (const phase of progressPhases) {
-          if (len >= phase.th && lastReportedLen < phase.th) {
-            addLog(`[AI] ${phase.msg}`);
-            lastReportedLen = phase.th;
+      const waitingHintTimer = window.setTimeout(() => {
+        if (!hasLoggedThinking && lastReportedLen === 0) {
+          hasLoggedThinking = true;
+          addLog("[AI] 模型正在推演复杂命局参数，请稍候...");
+        }
+      }, 4500);
+
+      try {
+        while (true) {
+          if (abortController.signal.aborted) throw new Error("推演已手动中断");
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          rawText += chunk;
+
+          if (!hasLoggedThinking && rawText.includes("--THINKING--")) {
+            hasLoggedThinking = true;
+            addLog("[AI] 模型正在推演复杂命局参数，请稍候...");
+          }
+
+          if (!hasLoggedRetry && rawText.includes("--RETRY--")) {
+            hasLoggedRetry = true;
+            addLog("[AI] 模型节点当前拥挤，正在自动重试连接...");
+          }
+
+          let cleanText = rawText.replace(/--(?:THINKING|RETRY)--\n?/g, "");
+          if (cleanText.includes("--STREAM-START--")) {
+            cleanText = cleanText.split("--STREAM-START--").slice(1).join("--STREAM-START--").replace(/^\n/, "");
+          }
+          fullText = cleanText;
+
+          // Progressively emit friendly log messages instead of dumping raw JSON
+          const len = fullText.replace(/--STREAM-[A-Z-]*$/, "").length;
+          for (const phase of progressPhases) {
+            if (len >= phase.th && lastReportedLen < phase.th) {
+              addLog(`[AI] ${phase.msg}`);
+              lastReportedLen = phase.th;
+            }
           }
         }
+      } finally {
+        window.clearTimeout(waitingHintTimer);
       }
 
-      if (fullText.trim().toLowerCase().startsWith("<!doctype html>") || fullText.trim().startsWith("<!")) {
+      if (rawText.trim().toLowerCase().startsWith("<!doctype html>") || rawText.trim().startsWith("<!")) {
         throw new Error("服务正在重启或无响应，请稍后再试。");
       }
 
-      if (fullText.includes("--STREAM-ERROR--")) {
-        throw new Error(
-          "AI 推演过程中断:" + fullText.split("--STREAM-ERROR--")[1],
-        );
+      if (rawText.includes("--STREAM-ERROR--")) {
+        let streamErr = rawText.split("--STREAM-ERROR--")[1].trim();
+        if (streamErr.includes("Rate exceeded") || streamErr.includes("429") || streamErr.includes("RESOURCE_EXHAUSTED")) {
+          streamErr = "官方 AI 接口当前请求频率受限 (429)，请稍后重试。";
+        } else if (streamErr.includes("503") || streamErr.includes("high demand") || streamErr.includes("UNAVAILABLE")) {
+          streamErr = "官方 AI 接口当前拥挤 (503)，请稍后重试。";
+        }
+        throw new Error(`AI 推演过程中断: ${streamErr}`);
       }
 
-      let resultJson = fullText;
-      if (resultJson.includes("--STREAM-START--\n")) {
-        resultJson = resultJson.split("--STREAM-START--\n")[1];
-      } else if (resultJson.includes("--STREAM-START--")) {
-        resultJson = resultJson.split("--STREAM-START--")[1];
-      }
-      resultJson = resultJson
+      let resultJson = fullText
         .replace(/```(?:json)?/gi, "")
         .replace(/```/g, "")
         .trim();
